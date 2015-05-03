@@ -1,0 +1,182 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace Intensity
+{
+    public class Intensity
+    {
+        Graph _graph;
+
+        public Intensity(Graph graph)
+        {
+            _graph = graph;
+        }
+
+        public void Init()
+        {
+            var nodes = _graph._nodeEdges.ToList();
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                nodes[i].Value.Community = i;
+            }
+        }
+
+        public float Run()
+        {
+            float sum = 0;
+            float old_sum = -1;
+            var iter = 0;
+            var initial = true;
+            while (sum != old_sum)
+            {
+                iter++;
+                old_sum = initial ? -1 * _graph._nodeEdges.Count : sum;
+                initial = false;
+                sum = 0;
+                var nodes = _graph._nodeEdges.ToList();
+                var nodeCount = 0;
+                foreach (var v in nodes)
+                {
+                    nodeCount++;
+                    Console.Clear();
+                    Console.WriteLine("running iteration=" + iter.ToString());
+                    Console.WriteLine("node=" + nodeCount.ToString());
+                    Console.WriteLine("completed=" + (100.0m * Convert.ToDecimal(nodeCount.ToString()) / Convert.ToDecimal(nodes.Count)).ToString() + "%");
+                    var cur_p = Score(v.Value);
+                    if (cur_p.Is(1))
+                    {
+                        sum += cur_p;
+                        continue;
+                    }
+
+                    float cur_p_neig = 0;
+                    foreach (var u in v.Value.Edges.ToList())
+                    {
+                        cur_p_neig += Score(u);
+                    }
+
+                    var comOrig = v.Value.Community;
+                    foreach (var c in v.Value.Edges.ToList().Where(w => w.Community != v.Value.Community).Select(s => s.Community).Distinct())
+                    {
+                        v.Value.Community = c;
+                        float n_p = Score(v.Value);
+
+                        float n_p_neig = 0;
+                        foreach (var t in v.Value.Edges.ToList())
+                        {
+                            n_p_neig += Score(t);
+                        }
+                        if (cur_p < n_p && cur_p_neig < n_p_neig)
+                        {
+                            cur_p = n_p;
+                            comOrig = v.Value.Community;
+                        }
+                        else
+                        {
+                            v.Value.Community = comOrig;
+                        }
+                    }
+
+                    sum += cur_p;
+                }
+            }
+            float netw_perm = sum / Convert.ToSingle(_graph._nodeEdges.ToList().Count);
+            return netw_perm;
+        }
+
+        public float Score(Node v)
+        {
+            var calulator = new Calculator(v);
+            return calulator.Score();
+        }
+    }
+
+    public class Calculator
+    {
+        private Node v;
+        private ListDictionary<int, Node> internals;
+        private float E_max_v;
+        float D_v;
+        float I_v;
+
+        public Calculator(Node node)
+        {
+            v = node;
+            var edges = v.Edges.ToList();
+            D_v = edges.Count;
+            internals = new ListDictionary<int, Node>();
+            Dictionary<int, int> diffComHash = new Dictionary<int, int>();
+            E_max_v = 0;
+            foreach (var edge in edges)
+            {
+                if (edge.Community != v.Community)
+                {
+                    if (diffComHash.ContainsKey(edge.Community))
+                    {
+                        diffComHash[edge.Community]++;
+                    }
+                    else
+                    {
+                        diffComHash[edge.Community] = 1;
+                    }
+                    float count = diffComHash[edge.Community];
+                    if (E_max_v < count) { E_max_v = count; }
+                }
+                else
+                {
+                    internals[edge.Id] = edge;
+                }
+            }
+            I_v = internals.Count;
+        }
+
+        float _c_in_v;
+        bool has_c_in_v = false;
+        private float c_in_v
+        {
+            get
+            {
+                if (!has_c_in_v)
+                {
+                    has_c_in_v = true;
+                    if (I_v < 3)
+                    {
+                        _c_in_v = 0;
+                    }
+                    else
+                    {
+                        var internalCount = 0;
+                        foreach (var intern in internals.ToList())
+                        {
+                            internalCount += intern.Edges.ToList().Count(e => e.Community == v.Community && internals.ContainsKey(e.Id));
+                        }
+                        var I_v_float = Convert.ToSingle(I_v);
+                        _c_in_v = Convert.ToSingle(internalCount) / (I_v_float * (I_v_float - 1));
+                    }
+                }
+                return _c_in_v;
+            }
+        }
+
+        public float Score()
+        {
+            if (D_v == 0 || E_max_v == 0)
+            {
+                return c_in_v;
+            }
+
+            if (I_v == 0)
+            {
+                return -1;
+            }
+
+            float f1 = I_v / E_max_v;
+            float f2 = 1 / D_v;
+            float f3 = 1 - c_in_v;
+
+            return (f1 * f2) - f3;
+        }
+    }
+}
