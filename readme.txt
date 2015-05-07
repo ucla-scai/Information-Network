@@ -1,5 +1,5 @@
 # Information-Network
-# Author: DPAS
+# Author: DPAS ()
 
 Section 1: Competition Community Detection
 
