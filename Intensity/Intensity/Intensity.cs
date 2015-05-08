@@ -5,9 +5,18 @@ using System.Text;
 
 namespace Intensity
 {
+    public class MessageEventArgs : EventArgs { public string Message;}
+
     public class Intensity
     {
         Graph _graph;
+
+        public event EventHandler Message;
+        public void OnMessage(string message)
+        {
+            if (Message == null) { return; }
+            Message(this, new MessageEventArgs() { Message = message });
+        }
 
         public Intensity(Graph graph)
         {
@@ -16,7 +25,7 @@ namespace Intensity
 
         public void Init()
         {
-            var nodes = _graph._nodeEdges.ToList();
+            var nodes = _graph.Nodes.ToList();
             for (var i = 0; i < nodes.Count; i++)
             {
                 nodes[i].Value.Community = i;
@@ -32,18 +41,17 @@ namespace Intensity
             while (sum != old_sum)
             {
                 iter++;
-                old_sum = initial ? -1 * _graph._nodeEdges.Count : sum;
+                old_sum = initial ? -1 * _graph.Nodes.Count : sum;
                 initial = false;
                 sum = 0;
-                var nodes = _graph._nodeEdges.ToList();
+                var nodes = _graph.Nodes.ToList();
                 var nodeCount = 0;
                 foreach (var v in nodes)
                 {
                     nodeCount++;
-                    Console.Clear();
-                    Console.WriteLine("running iteration=" + iter.ToString());
-                    Console.WriteLine("node=" + nodeCount.ToString());
-                    Console.WriteLine("completed=" + (100.0m * Convert.ToDecimal(nodeCount.ToString()) / Convert.ToDecimal(nodes.Count)).ToString() + "%");
+                    OnMessage("running iteration=" + iter.ToString());
+                    OnMessage("node=" + nodeCount.ToString());
+                    OnMessage("completed=" + (100.0m * (nodeCount.ToDecimal() / nodes.Count.ToDecimal())).ToString() + "%");
                     var cur_p = Score(v.Value);
                     if (cur_p.Is(1))
                     {
@@ -54,11 +62,11 @@ namespace Intensity
                     float cur_p_neig = 0;
                     foreach (var u in v.Value.Edges.ToList())
                     {
-                        cur_p_neig += Score(u);
+                        cur_p_neig += Score(u.Node);
                     }
 
                     var comOrig = v.Value.Community;
-                    foreach (var c in v.Value.Edges.ToList().Where(w => w.Community != v.Value.Community).Select(s => s.Community).Distinct())
+                    foreach (var c in v.Value.Edges.ToList().Where(w => w.Node.Community != v.Value.Community).Select(s => s.Node.Community).Distinct())
                     {
                         v.Value.Community = c;
                         float n_p = Score(v.Value);
@@ -66,7 +74,7 @@ namespace Intensity
                         float n_p_neig = 0;
                         foreach (var t in v.Value.Edges.ToList())
                         {
-                            n_p_neig += Score(t);
+                            n_p_neig += Score(t.Node);
                         }
                         if (cur_p < n_p && cur_p_neig < n_p_neig)
                         {
@@ -82,8 +90,8 @@ namespace Intensity
                     sum += cur_p;
                 }
             }
-            float netw_perm = sum / Convert.ToSingle(_graph._nodeEdges.ToList().Count);
-            return netw_perm;
+            float netw_intensity = sum / _graph.Nodes.ToList().Count.ToFloat();
+            return netw_intensity;
         }
 
         public float Score(Node v)
@@ -96,7 +104,7 @@ namespace Intensity
     public class Calculator
     {
         private Node v;
-        private ListDictionary<int, Node> internals;
+        private ListDictionary<int, Edge> internals;
         private float E_max_v;
         float D_v;
         float I_v;
@@ -106,27 +114,27 @@ namespace Intensity
             v = node;
             var edges = v.Edges.ToList();
             D_v = edges.Count;
-            internals = new ListDictionary<int, Node>();
+            internals = new ListDictionary<int, Edge>();
             Dictionary<int, int> diffComHash = new Dictionary<int, int>();
             E_max_v = 0;
             foreach (var edge in edges)
             {
-                if (edge.Community != v.Community)
+                if (edge.Node.Community != v.Community)
                 {
-                    if (diffComHash.ContainsKey(edge.Community))
+                    if (diffComHash.ContainsKey(edge.Node.Community))
                     {
-                        diffComHash[edge.Community]++;
+                        diffComHash[edge.Node.Community]++;
                     }
                     else
                     {
-                        diffComHash[edge.Community] = 1;
+                        diffComHash[edge.Node.Community] = 1;
                     }
-                    float count = diffComHash[edge.Community];
+                    float count = diffComHash[edge.Node.Community];
                     if (E_max_v < count) { E_max_v = count; }
                 }
                 else
                 {
-                    internals[edge.Id] = edge;
+                    internals[edge.Node.Id] = edge;
                 }
             }
             I_v = internals.Count;
@@ -150,10 +158,9 @@ namespace Intensity
                         var internalCount = 0;
                         foreach (var intern in internals.ToList())
                         {
-                            internalCount += intern.Edges.ToList().Count(e => e.Community == v.Community && internals.ContainsKey(e.Id));
+                            internalCount += intern.Node.Edges.ToList().Count(e => e.Node.Community == v.Community && internals.ContainsKey(e.Node.Id));
                         }
-                        var I_v_float = Convert.ToSingle(I_v);
-                        _c_in_v = Convert.ToSingle(internalCount) / (I_v_float * (I_v_float - 1));
+                        _c_in_v = internalCount.ToFloat() / (I_v * (I_v - 1));
                     }
                 }
                 return _c_in_v;

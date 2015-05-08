@@ -16,5 +16,15 @@ namespace Intensity
         {
             return Convert.ToInt32(f);
         }
+
+        public static decimal ToDecimal(this int i)
+        {
+            return Convert.ToDecimal(i);
+        }
+
+        public static float ToFloat(this int i)
+        {
+            return Convert.ToSingle(i);
+        }
     }
 }

@@ -5,12 +5,20 @@ using System.Text;
 
 namespace Intensity
 {
+    public class Edge
+    {
+        public Node Node;
+        public decimal Weight;
+        public decimal Price;
+    }
+
     public class Node
     {
         public Graph Graph;
         public int Community = -1;
         public int Id;
-        public ListDictionary<int, Node> Edges = new ListDictionary<int, Node>();
+        public ListDictionary<int, Edge> Edges = new ListDictionary<int, Edge>();
+        public bool IsAdvertiser;
 
         public Node(Graph graph)
         {
@@ -23,31 +31,33 @@ namespace Intensity
         public override string ToString()
         {
             var str = "";
-            foreach (var node in _nodeEdges.ToList())
+            foreach (var node in _nodes.ToList())
             {
                 foreach (var edge in node.Value.Edges.ToList())
                 {
-                    str += "\n" + "c=" + node.Value.Community.ToString() + "," + node.Value.Id.ToString() + "-->" + edge.Id.ToString() + "," + "c=" + edge.Community.ToString();
+                    str += "\n" + "c=" + node.Value.Community.ToString() + "," + node.Value.Id.ToString() + "-->" + edge.Node.Id.ToString() + "," + "c=" + edge.Node.Community.ToString();
                 }
             }
             return str;
         }
 
-        public Dictionary<int, Node> _nodeEdges = new Dictionary<int, Node>();
+        private Dictionary<int, Node> _nodes = new Dictionary<int, Node>();
 
-        public void AddNode(int node)
+        public Dictionary<int, Node> Nodes { get { return _nodes; } }
+
+        public void AddNode(int node, bool isAdvertiser)
         {
-            if (_nodeEdges.ContainsKey(node)) { return; }
-            _nodeEdges[node] = new Node(this) { Id = node };
+            if (_nodes.ContainsKey(node)) { return; }
+            _nodes[node] = new Node(this) { Id = node, IsAdvertiser = isAdvertiser };
         }
 
-        public void AddEdge(int a, int b)
+        public void AddEdge(int a, bool aIsAdvertiser, int b, bool bIsAdvertiser, decimal weight, decimal price)
         {
-            if (!_nodeEdges.ContainsKey(a)) { AddNode(a); }
-            if (!_nodeEdges.ContainsKey(b)) { AddNode(b); }
+            if (!_nodes.ContainsKey(a)) { AddNode(a, aIsAdvertiser); }
+            if (!_nodes.ContainsKey(b)) { AddNode(b, bIsAdvertiser); }
 
-            if (!_nodeEdges[a].Edges.ContainsKey(b)) { _nodeEdges[a].Edges[b] = _nodeEdges[b]; }
-            if (!_nodeEdges[b].Edges.ContainsKey(a)) { _nodeEdges[b].Edges[a] = _nodeEdges[a]; }
+            if (!_nodes[a].Edges.ContainsKey(b)) { _nodes[a].Edges[b] = new Edge() { Node = _nodes[b], Price = price, Weight = weight }; }
+            if (!_nodes[b].Edges.ContainsKey(a)) { _nodes[b].Edges[a] = new Edge() { Node = _nodes[a], Price = price, Weight = weight }; }
         }
     }
 }

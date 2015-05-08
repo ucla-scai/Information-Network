@@ -3,18 +3,34 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Intensity", "Intensity\Intensity.csproj", "{A0450184-6298-44BF-A9B2-D72753F46A4A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8B79B49C-C5A7-49F4-A49E-BA10F29016B5}"
+EndProject
 Global
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = Intensity.vsmdi
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|Any CPU.Build.0 = Debug|x64
+		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|Mixed Platforms.Build.0 = Debug|x64
 		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|x64.ActiveCfg = Debug|x64
 		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|x64.Build.0 = Debug|x64
 		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|x86.ActiveCfg = Debug|x86
 		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Debug|x86.Build.0 = Debug|x86
+		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Release|Any CPU.ActiveCfg = Release|x64
+		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Release|Mixed Platforms.Build.0 = Release|x64
 		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Release|x64.ActiveCfg = Release|x64
 		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Release|x64.Build.0 = Release|x64
 		{A0450184-6298-44BF-A9B2-D72753F46A4A}.Release|x86.ActiveCfg = Release|x86
