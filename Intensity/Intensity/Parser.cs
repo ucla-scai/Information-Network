@@ -81,5 +81,25 @@ namespace Intensity
                 }
             }
         }
+
+        public Graph FromFile(string input)
+        {
+            var graph = new Graph();
+            using (var reader = new StreamReader(input))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    var split = line.Split('\t');
+                    var advertiser = int.Parse(split.First());
+                    var keyword = int.Parse(split[1]);
+                    var weight = decimal.Parse(split[2]);
+                    var price = decimal.Parse(split[3]);
+                    graph.AddEdge(advertiser, true, keyword, false, weight, price);
+                    line = reader.ReadLine();
+                }
+            }
+            return graph;
+        }
     }
 }

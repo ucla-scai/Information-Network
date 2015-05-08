@@ -59,5 +59,53 @@ namespace Intensity
             if (!_nodes[a].Edges.ContainsKey(b)) { _nodes[a].Edges[b] = new Edge() { Node = _nodes[b], Price = price, Weight = weight }; }
             if (!_nodes[b].Edges.ContainsKey(a)) { _nodes[b].Edges[a] = new Edge() { Node = _nodes[a], Price = price, Weight = weight }; }
         }
+
+        public string ToDot()
+        {
+            Dictionary<string, bool> seen = new Dictionary<string, bool>();
+            var dot = "graph G {\n";
+            var cluster = 0;
+            var communities = _nodes.Values.ToList().Select(s => s.Community).Distinct().ToList();
+            foreach (var community in communities)
+            {
+                dot += "subgraph cluster" + cluster.ToString() + " {\n";
+                foreach (var node in _nodes)
+                {
+                    if (node.Value.Community != community) { continue; }
+                    
+                    foreach (var edge in node.Value.Edges.ToList().Where(e => e.Node.Community == node.Value.Community))
+                    {
+                        var nodeEdge = node.Value.Id.ToString() + " -- " + edge.Node.Id.ToString();
+                        var reverse = edge.Node.Id.ToString() + " -- " + node.Value.Id.ToString();
+                        if (seen.ContainsKey(nodeEdge) || seen.ContainsKey(reverse)) { continue; }
+                        dot += nodeEdge + " [ label=\"" + edge.Weight.ToString() + "\" ];\n";
+                        seen[nodeEdge] = true;
+                    }
+                }
+                dot += "label = \"" + community.ToString() + "\"\n";
+                dot += "style=dashed\n";
+                dot += "}\n";
+                cluster++;
+            }
+
+            foreach (var node in _nodes)
+            {
+                foreach (var edge in node.Value.Edges.ToList())
+                {
+                    var nodeEdge = node.Value.Id.ToString() + " -- " + edge.Node.Id.ToString();
+                    var reverse = edge.Node.Id.ToString() + " -- " + node.Value.Id.ToString();
+                    if (seen.ContainsKey(nodeEdge) || seen.ContainsKey(reverse)) { continue; }
+                    dot += nodeEdge + " [ label=\"" + edge.Weight.ToString() + "\" ];\n";
+                    seen[nodeEdge] = true;
+                }
+            }
+            foreach (var node in _nodes)
+            {
+                var shape = node.Value.IsAdvertiser ? "ellipse,style=filled,color=firebrick,fontcolor=white" : "box,style=filled,color=grey,fontcolor=white";
+                dot += node.Value.Id.ToString() + " [shape=" + shape + "];\n";
+            }
+            dot += "}";
+            return dot;
+        }
     }
 }

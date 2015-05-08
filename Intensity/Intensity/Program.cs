@@ -10,22 +10,38 @@ namespace Intensity
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Test_Parse()
         {
-
             var output = @"C:\Users\Justin\Desktop\20130109\output_test.dat";
             if (File.Exists(output)) { File.Delete(output); }
 
-            var argsList = new List<string>();
-            argsList.Add("-p");
-            argsList.Add("-a");
-            argsList.Add(@"C:\Users\Justin\Desktop\20130109\20130109_advertisers.dat");
-            argsList.Add("-k");
-            argsList.Add(@"C:\Users\Justin\Desktop\20130109\20130109_keywords.dat");
-            argsList.Add("-o");
-            argsList.Add(output);
+            var args = new List<string>();
+            args.Add("-p");
+            args.Add("-a");
+            args.Add(@"C:\Users\Justin\Desktop\20130109\20130109_advertisers.dat");
+            args.Add("-k");
+            args.Add(@"C:\Users\Justin\Desktop\20130109\20130109_keywords.dat");
+            args.Add("-o");
+            args.Add(output);
+            Main(args.ToArray());
+        }
 
-            args = argsList.ToArray();
+        public static void Test_Intensity()
+        {
+            var output = @"C:\Users\Justin\Desktop\20130109\input.dat";
+            var args = new List<string>();
+            args.Add("-i");
+            args.Add(output);
+            Main(args.ToArray());
+        }
+
+        public static void Main(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Test_Intensity();
+                return;
+            }
 
             if (args.Length == 0)
             {
@@ -39,14 +55,33 @@ namespace Intensity
             {
                 Parse(args);
             }
+            else if (args.First() == "-i" || args.First() == "--input")
+            {
+                Intensity(args);
+            }
             else
             {
-                var graph = new Graph();
-                var intensity = new Intensity(graph);
-                intensity.Init();
-                var score = intensity.Run();
+                Help();    
             }
-            Console.Read();
+            //Console.ReadKey();
+        }
+
+        private static void Intensity(string[] args)
+        {
+            string input = null;
+            for (var i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "-i" || args[i] == "--input")
+                {
+                    input = args[i + 1];
+                }
+            }
+            var graph = new Parser().FromFile(input);
+            var intensity = new Intensity(graph);
+            intensity.Init();
+            var score = intensity.Run();
+            Debug.WriteLine(graph.ToDot());
+            Console.WriteLine("score=" + score);
         }
 
         private static void Parse(string[] args)
@@ -80,8 +115,9 @@ namespace Intensity
             Console.WriteLine("Intensity: Information Network Analysis" );
             Console.WriteLine("DPAS");
             Console.WriteLine("");
-            Console.WriteLine("Intensity [-p] [--parse] [-a] [--advertiser] [-k] [--keyword] [-o] [--output] [-h] [--help]");
+            Console.WriteLine("Intensity [-i] [--input] [-p] [--parse] [-a] [--advertiser] [-k] [--keyword] [-o] [--output] [-h] [--help]");
             Console.WriteLine("");
+            Console.WriteLine(Line("i", "input", "run intensity with given input file"));
             Console.WriteLine(Line("p", "parse", "build an output graph from raw data -a, -k, and -o flags must be set"));
             Console.WriteLine(Line("a", "advertiser", "raw advertiser data file"));
             Console.WriteLine(Line("k", "keyword", "raw keyword data file"));
