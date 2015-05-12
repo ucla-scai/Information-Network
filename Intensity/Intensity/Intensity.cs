@@ -49,9 +49,7 @@ namespace Intensity
                 foreach (var v in nodes)
                 {
                     nodeCount++;
-                    OnMessage("running iteration=" + iter.ToString());
-                    OnMessage("node=" + nodeCount.ToString());
-                    OnMessage("completed=" + (100.0m * (nodeCount.ToDecimal() / nodes.Count.ToDecimal())).ToString() + "%");
+                    OnMessage("running iteration=" + iter.ToString() + "\n" + "node=" + nodeCount.ToString() + "\n" + "completed=" + (100.0m * (nodeCount.ToDecimal() / nodes.Count.ToDecimal())).ToString() + "%");
                     var cur_p = Score(v.Value);
                     if (cur_p.Is(1))
                     {

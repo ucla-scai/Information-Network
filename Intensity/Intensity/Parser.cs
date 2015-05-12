@@ -9,10 +9,17 @@ namespace Intensity
 {
     public class Parser
     {
-        public void ToFile(string keywordFile, string advertiserFile, string output)
+        private class KeywordInfo
         {
-            var advertisers = new Dictionary<string, Advertiser>();
-            var advertiserSectors = new Dictionary<int, Dictionary<int, bool>>();
+            public int N = 0;
+            public int Sum = 0;
+            public Dictionary<int, bool> Advertisers = new Dictionary<int, bool>();
+        }
+
+        public void ToFile(string advertiserFile, string keywordFile, string output, int sectors)
+        {
+            var sectorAdvertisers = new Dictionary<int, Dictionary<int, bool>>();
+
             using (var reader = new StreamReader(advertiserFile))
             {
                 var line = reader.ReadLine();
@@ -32,51 +39,54 @@ namespace Intensity
                     var clickPrice = float.Parse(split[8]);
                     var rank = float.Parse(split[9]);
                     var asn = float.Parse(split[10]);
-                    var advertiser = new Advertiser()
-                    {
-                        Asn = asn,
-                        BiddingPrice = biddingPrice,
-                        ClickPrice = clickPrice,
-                        Clicks = clicks,
-                        Consumption = consumption,
-                        Date = date,
-                        Id = id,
-                        Impressions = impressions,
-                        Quality = quality,
-                        Rank = rank,
-                        Sector = sector,
-                        ShowPositions = showPositions
-                    };
-                    advertisers[id_sector] = advertiser;
-                    if (!advertiserSectors.ContainsKey(id)) { advertiserSectors[id] = new Dictionary<int, bool>(); }
-                    advertiserSectors[id][sector] = true;
+                    if (!sectorAdvertisers.ContainsKey(sector)) { sectorAdvertisers[sector] = new Dictionary<int, bool>(); }
+                    sectorAdvertisers[sector][id] = true;
                     line = reader.ReadLine();
                 }
             }
-            using (var writer = new StreamWriter(output))
+
+            var luckySectors = sectorAdvertisers.Keys.ToList().OrderBy(c => Guid.NewGuid()).ToList().Take(sectors).ToList();
+            var luckyAdvertisers = new Dictionary<int, bool>();
+            foreach (var luckySector in luckySectors)
             {
-                using (var reader = new StreamReader(keywordFile))
+                foreach (var advertiser in sectorAdvertisers[luckySector].Keys)
                 {
-                    var line = reader.ReadLine();
-                    while (line != null)
+                    luckyAdvertisers[advertiser] = true;
+                }
+            }
+
+            Dictionary<int, KeywordInfo> keywords = new Dictionary<int, KeywordInfo>();
+            using (var reader = new StreamReader(keywordFile))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    var split = line.Split('\t');
+                    var advertiser = int.Parse(split.First());
+                    if (luckyAdvertisers.ContainsKey(advertiser))
                     {
-                        var split = line.Split('\t');
-                        var advertiser = int.Parse(split.First());
                         var id = int.Parse(split[1]);
                         var position = int.Parse(split[2]);
                         var consumption = int.Parse(split[3]);
+                        if (!keywords.ContainsKey(id)) { keywords[id] = new KeywordInfo(); }
+                        keywords[id].N++;
+                        keywords[id].Sum += consumption;
+                        keywords[id].Advertisers[advertiser] = true;
+                    }
+                    line = reader.ReadLine();
+                }
+            }
 
-                        var keyword = new Keyword() { Advertiser = advertiser, Consumption = consumption, Id = id, Position = position };
-
-                        foreach (var sector in advertiserSectors[advertiser].Keys)
-                        {
-                            var id_sector = advertiser.ToString() + "_" + sector.ToString();
-                            keyword.Advertisers[sector] = advertisers[id_sector];
-                            advertisers[id_sector].Keywords[id] = keyword;
-                        }
-                        var writeLine = string.Format("{0}\t{1}\t{2}\t{3}", keyword.Advertiser, keyword.Id, 0.5, 1);
+            using (var writer = new StreamWriter(output))
+            {
+                foreach (var key in keywords.Keys)
+                {
+                    var keywordInfo = keywords[key];
+                    foreach (var advertiser in keywordInfo.Advertisers.Keys)
+                    {
+                        var weight = keywordInfo.Sum.ToDecimal() / keywordInfo.N.ToDecimal();
+                        var writeLine = string.Format("{0}\t{1}\t{2}", advertiser, key, weight);
                         writer.WriteLine(writeLine);
-                        line = reader.ReadLine();
                     }
                 }
             }
@@ -93,9 +103,8 @@ namespace Intensity
                     var split = line.Split('\t');
                     var advertiser = int.Parse(split.First());
                     var keyword = int.Parse(split[1]);
-                    var weight = decimal.Parse(split[2]);
-                    var price = decimal.Parse(split[3]);
-                    graph.AddEdge(advertiser, true, keyword, false, weight, price);
+                    var weight = Math.Round(decimal.Parse(split[2]), 2);
+                    graph.AddEdge(advertiser, true, keyword, false, weight);
                     line = reader.ReadLine();
                 }
             }

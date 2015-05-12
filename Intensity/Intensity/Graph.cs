@@ -9,7 +9,6 @@ namespace Intensity
     {
         public Node Node;
         public decimal Weight;
-        public decimal Price;
     }
 
     public class Node
@@ -51,13 +50,13 @@ namespace Intensity
             _nodes[node] = new Node(this) { Id = node, IsAdvertiser = isAdvertiser };
         }
 
-        public void AddEdge(int a, bool aIsAdvertiser, int b, bool bIsAdvertiser, decimal weight, decimal price)
+        public void AddEdge(int a, bool aIsAdvertiser, int b, bool bIsAdvertiser, decimal weight)
         {
             if (!_nodes.ContainsKey(a)) { AddNode(a, aIsAdvertiser); }
             if (!_nodes.ContainsKey(b)) { AddNode(b, bIsAdvertiser); }
 
-            if (!_nodes[a].Edges.ContainsKey(b)) { _nodes[a].Edges[b] = new Edge() { Node = _nodes[b], Price = price, Weight = weight }; }
-            if (!_nodes[b].Edges.ContainsKey(a)) { _nodes[b].Edges[a] = new Edge() { Node = _nodes[a], Price = price, Weight = weight }; }
+            if (!_nodes[a].Edges.ContainsKey(b)) { _nodes[a].Edges[b] = new Edge() { Node = _nodes[b], Weight = weight }; }
+            if (!_nodes[b].Edges.ContainsKey(a)) { _nodes[b].Edges[a] = new Edge() { Node = _nodes[a], Weight = weight }; }
         }
 
         public string ToDot()

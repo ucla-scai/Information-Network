@@ -21,6 +21,8 @@ namespace Intensity
             args.Add(@"C:\Users\Justin\Desktop\20130109\20130109_advertisers.dat");
             args.Add("-k");
             args.Add(@"C:\Users\Justin\Desktop\20130109\20130109_keywords.dat");
+            args.Add("-s");
+            args.Add("1");
             args.Add("-o");
             args.Add(output);
             Main(args.ToArray());
@@ -28,10 +30,10 @@ namespace Intensity
 
         public static void Test_Intensity()
         {
-            var output = @"C:\Users\Justin\Desktop\20130109\input.dat";
+            var input = @"C:\Users\Justin\Desktop\20130109\output_test_wenchao.dat";
             var args = new List<string>();
             args.Add("-i");
-            args.Add(output);
+            args.Add(input);
             Main(args.ToArray());
         }
 
@@ -39,6 +41,7 @@ namespace Intensity
         {
             if (args.Length == 0)
             {
+                //Test_Parse();
                 Test_Intensity();
                 return;
             }
@@ -61,9 +64,10 @@ namespace Intensity
             }
             else
             {
-                Help();    
+                Help();
             }
-            //Console.ReadKey();
+            Console.WriteLine("\n<DONE>");
+            Debug.WriteLine("\n<DONE>");
         }
 
         private static void Intensity(string[] args)
@@ -79,17 +83,25 @@ namespace Intensity
             var graph = new Parser().FromFile(input);
             var intensity = new Intensity(graph);
             intensity.Init();
+            intensity.Message += new EventHandler(intensity_Message);
             var score = intensity.Run();
             Debug.WriteLine(graph.ToDot());
             Console.WriteLine("score=" + score);
         }
 
+        static void intensity_Message(object sender, EventArgs e)
+        {
+            Console.Clear();
+            Console.WriteLine(((MessageEventArgs)e).Message);
+        }
+
         private static void Parse(string[] args)
         {
-            if (args.Length != 7) { Help(); return; }
+            if (args.Length < 7) { Help(); return; }
             string keyword = null;
             string advertiser = null;
             string output = null;
+            string sectors = null;
             for (var i = 1; i < args.Length; i++)
             {
                 if (args[i] == "-k" || args[i] == "--keyword")
@@ -104,21 +116,26 @@ namespace Intensity
                 {
                     output = args[i + 1];
                 }
+                if (args[i] == "-s" || args[i] == "--sectors")
+                {
+                    sectors = args[i + 1];
+                }
             }
             var parser = new Parser();
-            parser.ToFile(keyword, advertiser, output);
+            parser.ToFile(advertiser, keyword, output, int.Parse(sectors));
         }
 
         private static void Help()
         {
             Console.WriteLine("");
-            Console.WriteLine("Intensity: Information Network Analysis" );
+            Console.WriteLine("Intensity: Information Network Analysis");
             Console.WriteLine("DPAS");
             Console.WriteLine("");
-            Console.WriteLine("Intensity [-i] [--input] [-p] [--parse] [-a] [--advertiser] [-k] [--keyword] [-o] [--output] [-h] [--help]");
+            Console.WriteLine("Intensity [-s] [--sectors] [-i] [--input] [-p] [--parse] [-a] [--advertiser] [-k] [--keyword] [-o] [--output] [-h] [--help]");
             Console.WriteLine("");
             Console.WriteLine(Line("i", "input", "run intensity with given input file"));
             Console.WriteLine(Line("p", "parse", "build an output graph from raw data -a, -k, and -o flags must be set"));
+            Console.WriteLine(Line("s", "sectors", "for building output file how many random sectors to include"));
             Console.WriteLine(Line("a", "advertiser", "raw advertiser data file"));
             Console.WriteLine(Line("k", "keyword", "raw keyword data file"));
             Console.WriteLine(Line("o", "output", "file to output a graph representation of raw data"));
