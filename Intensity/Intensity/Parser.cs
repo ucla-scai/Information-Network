@@ -16,6 +16,14 @@ namespace Intensity
             public Dictionary<int, bool> Advertisers = new Dictionary<int, bool>();
         }
 
+        private class AdvertiserKeyword
+        {
+            public int Advertiser;
+            public int Id;
+            public int Position;
+            public int Consumption;
+        }
+
         public void ToFile(string advertiserFile, string keywordFile, string output, int sectors)
         {
             var sectorAdvertisers = new Dictionary<int, Dictionary<int, bool>>();
@@ -56,6 +64,7 @@ namespace Intensity
             }
 
             Dictionary<int, KeywordInfo> keywords = new Dictionary<int, KeywordInfo>();
+            Dictionary<string, AdvertiserKeyword> advertiserKeywords = new Dictionary<string, AdvertiserKeyword>();
             using (var reader = new StreamReader(keywordFile))
             {
                 var line = reader.ReadLine();
@@ -68,6 +77,17 @@ namespace Intensity
                         var id = int.Parse(split[1]);
                         var position = int.Parse(split[2]);
                         var consumption = int.Parse(split[3]);
+                        var advertiserKeyword = new AdvertiserKeyword() { Advertiser = advertiser, Consumption = consumption, Id = id, Position = position };
+                        var adKeyString = advertiser.ToString() + "_" + id.ToString();
+                        if (!advertiserKeywords.ContainsKey(adKeyString))
+                        {
+                            advertiserKeywords[adKeyString] = advertiserKeyword;
+                        }
+                        else
+                        {
+                            advertiserKeywords[adKeyString].Consumption += consumption;
+                        }
+
                         if (!keywords.ContainsKey(id)) { keywords[id] = new KeywordInfo(); }
                         keywords[id].N++;
                         keywords[id].Sum += consumption;
@@ -82,10 +102,13 @@ namespace Intensity
                 foreach (var key in keywords.Keys)
                 {
                     var keywordInfo = keywords[key];
+                    if (keywordInfo.Sum == 0) { continue; }
                     foreach (var advertiser in keywordInfo.Advertisers.Keys)
                     {
-                        var weight = keywordInfo.Sum.ToDecimal() / keywordInfo.N.ToDecimal();
-                        var writeLine = string.Format("{0}\t{1}\t{2}", advertiser, key, weight);
+                        var adKeyString = advertiser.ToString() + "_" + key.ToString();
+                        var advertiserKeyword = advertiserKeywords[adKeyString];
+                        var weight = advertiserKeyword.Consumption.ToDecimal() / keywordInfo.Sum.ToDecimal();
+                        var writeLine = string.Format("{0}\t{1}\t{2}\t{3}\t{4}", advertiser, key, weight, advertiserKeyword.Consumption, keywordInfo.Sum);
                         writer.WriteLine(writeLine);
                     }
                 }
