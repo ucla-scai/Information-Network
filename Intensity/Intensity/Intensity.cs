@@ -58,22 +58,48 @@ namespace Intensity
                     }
 
                     float cur_p_neig = 0;
-                    foreach (var u in v.Value.Edges.ToList())
+                    var edges = v.Value.Edges.ToList();
+                    foreach (var u in edges)
                     {
                         cur_p_neig += Score(u.Node);
                     }
 
                     var comOrig = v.Value.Community;
-                    foreach (var c in v.Value.Edges.ToList().Where(w => w.Node.Community != v.Value.Community).Select(s => s.Node.Community).Distinct())
+                    var notSameCommunities = new Dictionary<int, bool>();
+                    var community = v.Value.Community;
+                    for (var i = 0; i < edges.Count; i++)
+                    {
+                        notSameCommunities[edges[i].Node.Community] = true;    
+                    }
+                    if (notSameCommunities.ContainsKey(community)) { notSameCommunities.Remove(community); }
+
+                    foreach (var c in notSameCommunities.Keys)
                     {
                         v.Value.Community = c;
                         float n_p = Score(v.Value);
 
                         float n_p_neig = 0;
-                        foreach (var t in v.Value.Edges.ToList())
+                        
+                        if (cur_p < n_p)
                         {
-                            n_p_neig += Score(t.Node);
+                            for (var i = 0; i < edges.Count; i++)
+                            {
+                                var t = edges[i];
+                                n_p_neig += Score(t.Node);
+                                var left = edges.Count - i - 1;
+                                if (cur_p_neig >= (1 * left) + n_p_neig)
+                                {
+                                    i++;
+                                    while (i < edges.Count)
+                                    {
+                                        edges[i].Node.IsDirty = true;
+                                        i++;
+                                    }
+                                    break;
+                                }
+                            }
                         }
+
                         if (cur_p < n_p && cur_p_neig < n_p_neig)
                         {
                             cur_p = n_p;
@@ -167,13 +193,25 @@ namespace Intensity
 
         public float Score()
         {
+            if (v.D_v == D_v && v.E_max_v == E_max_v && v.I_v == I_v && !v.IsDirty)
+            {
+                return v.Score;
+            }
+
+            v.D_v = D_v;
+            v.E_max_v = E_max_v;
+            v.I_v = I_v;
+
             if (D_v == 0 || E_max_v == 0)
             {
-                return c_in_v;
+                var ret = c_in_v;
+                v.Score = ret;
+                return ret;
             }
 
             if (I_v == 0)
             {
+                v.Score = -1;
                 return -1;
             }
 
@@ -181,7 +219,9 @@ namespace Intensity
             float f2 = 1 / D_v;
             float f3 = 1 - c_in_v;
 
-            return (f1 * f2) - f3;
+            var retScore = (f1 * f2) - f3;
+            v.Score = retScore;
+            return retScore;
         }
     }
 }

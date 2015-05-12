@@ -14,10 +14,19 @@ namespace Intensity
     public class Node
     {
         public Graph Graph;
-        public int Community = -1;
+
+        private bool _dirty = false;
+        private int _community = -1;
+        public int Community { get { return _community; } set { _dirty = true; _community = value; } }
         public int Id;
         public ListDictionary<int, Edge> Edges = new ListDictionary<int, Edge>();
         public bool IsAdvertiser;
+        public bool IsDirty { get { return _dirty; } set { _dirty = value; } }
+
+        public float E_max_v = -1;
+        public float D_v = -1;
+        public float I_v = -1;
+        public float Score = -1;
 
         public Node(Graph graph)
         {

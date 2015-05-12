@@ -37,12 +37,29 @@ namespace Intensity
             Main(args.ToArray());
         }
 
+        public static void Test_Get_Sector()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\output_test_wenchao.dat";
+            var advertisers = @"C:\Users\Justin\Desktop\20130109\20130109_advertisers.dat";
+            var parser = new Parser();
+            parser.GetSector(input, advertisers);
+        }
+
+        public static void Test_Get_Cpc()
+        {
+            var advertisers = @"C:\Users\Justin\Desktop\20130109\20130109_advertisers.dat";
+            var output = @"C:\Users\Justin\Desktop\20130109\output_test_ariaym.dat";
+            var parser = new Parser();
+            parser.GetCpC("6414", advertisers, output);
+        }
+
         public static void Main(string[] args)
         {
             if (args.Length == 0)
             {
                 //Test_Parse();
                 Test_Intensity();
+                //Test_Get_Cpc();
                 return;
             }
 
