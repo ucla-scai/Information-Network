@@ -10,6 +10,7 @@ namespace Intensity
     public class Intensity
     {
         Graph _graph;
+        float _lambda;
 
         public event EventHandler Message;
         public void OnMessage(string message)
@@ -18,9 +19,10 @@ namespace Intensity
             Message(this, new MessageEventArgs() { Message = message });
         }
 
-        public Intensity(Graph graph)
+        public Intensity(Graph graph, float lambda)
         {
             _graph = graph;
+            _lambda = lambda;
         }
 
         public void Init()
@@ -41,7 +43,7 @@ namespace Intensity
             while (sum != old_sum)
             {
                 iter++;
-                old_sum = initial ? -1 * _graph.Nodes.Count : sum;
+                old_sum = initial ? -1 * _lambda * _graph.AdvertiserCount : sum;
                 initial = false;
                 sum = 0;
                 var nodes = _graph.Nodes.ToList();
@@ -50,8 +52,11 @@ namespace Intensity
                 {
                     nodeCount++;
                     OnMessage("running iteration=" + iter.ToString() + "\n" + "node=" + nodeCount.ToString() + "\n" + "completed=" + (100.0m * (nodeCount.ToDecimal() / nodes.Count.ToDecimal())).ToString() + "%");
+
+                    if (!v.Value.IsAdvertiser) { continue; }
+
                     var cur_p = Score(v.Value);
-                    if (cur_p.Is(1))
+                    if (cur_p.Is(_lambda + 1f))
                     {
                         sum += cur_p;
                         continue;
@@ -59,9 +64,20 @@ namespace Intensity
 
                     float cur_p_neig = 0;
                     var edges = v.Value.Edges.ToList();
-                    foreach (var u in edges)
+                    var advertisersToCheck = new ListDictionary<int, Node>();
+                    foreach (var k in edges)
                     {
-                        cur_p_neig += Score(u.Node);
+                        var keyword = k.Node;
+                        foreach (var a in keyword.Edges.ToList())
+                        {
+                            advertisersToCheck[a.Node.Id] = a.Node;
+                        }
+                        
+                    }
+
+                    foreach (var p in advertisersToCheck.ToList())
+                    {
+                        cur_p_neig += Score(p);
                     }
 
                     var comOrig = v.Value.Community;
@@ -69,7 +85,11 @@ namespace Intensity
                     var community = v.Value.Community;
                     for (var i = 0; i < edges.Count; i++)
                     {
-                        notSameCommunities[edges[i].Node.Community] = true;    
+                        var keyword = edges[i].Node;
+                        foreach (var a in keyword.Edges.ToList())
+                        {
+                            notSameCommunities[a.Node.Community] = true;
+                        }
                     }
                     if (notSameCommunities.ContainsKey(community)) { notSameCommunities.Remove(community); }
 
@@ -82,17 +102,18 @@ namespace Intensity
                         
                         if (cur_p < n_p)
                         {
-                            for (var i = 0; i < edges.Count; i++)
+                            var advertisersToCheckList = advertisersToCheck.ToList();
+                            for (var i = 0; i < advertisersToCheckList.Count; i++)
                             {
-                                var t = edges[i];
-                                n_p_neig += Score(t.Node);
-                                var left = edges.Count - i - 1;
-                                if (cur_p_neig >= (1 * left) + n_p_neig)
+                                var t = advertisersToCheckList[i];
+                                n_p_neig += Score(t);
+                                var left = advertisersToCheckList.Count - i - 1;
+                                if (cur_p_neig >= ((1+ _lambda) * left) + n_p_neig)
                                 {
                                     i++;
-                                    while (i < edges.Count)
+                                    while (i < advertisersToCheckList.Count)
                                     {
-                                        edges[i].Node.IsDirty = true;
+                                        advertisersToCheckList[i].IsDirty = true;
                                         i++;
                                     }
                                     break;
@@ -120,7 +141,7 @@ namespace Intensity
 
         public float Score(Node v)
         {
-            var calulator = new Calculator(v);
+            var calulator = new Calculator(v, _lambda);
             return calulator.Score();
         }
     }
@@ -130,38 +151,39 @@ namespace Intensity
         private Node v;
         private ListDictionary<int, Edge> internals;
         private float E_max_v;
-        float D_v;
         float I_v;
+        float _lambda;
 
-        public Calculator(Node node)
+        public Calculator(Node node, float lambda)
         {
+            _lambda = lambda;
             v = node;
             var edges = v.Edges.ToList();
-            D_v = edges.Count;
             internals = new ListDictionary<int, Edge>();
-            Dictionary<int, int> diffComHash = new Dictionary<int, int>();
+            Dictionary<int, float> diffComHash = new Dictionary<int, float>();
             E_max_v = 0;
+            I_v = 0;
             foreach (var edge in edges)
             {
                 if (edge.Node.Community != v.Community)
                 {
                     if (diffComHash.ContainsKey(edge.Node.Community))
                     {
-                        diffComHash[edge.Node.Community]++;
+                        diffComHash[edge.Node.Community]+=edge.Weight;
                     }
                     else
                     {
-                        diffComHash[edge.Node.Community] = 1;
+                        diffComHash[edge.Node.Community] = edge.Weight;
                     }
-                    float count = diffComHash[edge.Node.Community];
-                    if (E_max_v < count) { E_max_v = count; }
+                    float maxTest = diffComHash[edge.Node.Community];
+                    if (E_max_v < maxTest) { E_max_v = maxTest; }
                 }
                 else
                 {
                     internals[edge.Node.Id] = edge;
+                    I_v += edge.Weight;
                 }
             }
-            I_v = internals.Count;
         }
 
         float _c_in_v;
@@ -173,19 +195,24 @@ namespace Intensity
                 if (!has_c_in_v)
                 {
                     has_c_in_v = true;
-                    if (I_v < 3)
+                    
+                    var n = 0f;
+                    var sum = 0f;
+                    foreach (var intern in internals.ToList())
                     {
-                        _c_in_v = 0;
-                    }
-                    else
-                    {
-                        var internalCount = 0;
-                        foreach (var intern in internals.ToList())
+                        var keyword = intern.Node;
+                        var attachedAdvertisers = keyword.Edges.ToList();
+                            
+                        foreach (var attachedAdvertiser in attachedAdvertisers)
                         {
-                            internalCount += intern.Node.Edges.ToList().Count(e => e.Node.Community == v.Community && internals.ContainsKey(e.Node.Id));
+                            if (attachedAdvertiser.Node.Community == v.Community)
+                            {
+                                sum += attachedAdvertiser.Weight;
+                                n++;
+                            }
                         }
-                        _c_in_v = internalCount.ToFloat() / (I_v * (I_v - 1));
                     }
+                    _c_in_v = n == 0 ? 0 : sum / n;
                 }
                 return _c_in_v;
             }
@@ -193,33 +220,19 @@ namespace Intensity
 
         public float Score()
         {
-            if (v.D_v == D_v && v.E_max_v == E_max_v && v.I_v == I_v && !v.IsDirty)
-            {
-                return v.Score;
-            }
-
-            v.D_v = D_v;
-            v.E_max_v = E_max_v;
-            v.I_v = I_v;
-
-            if (D_v == 0 || E_max_v == 0)
+            if (E_max_v == 0)
             {
                 var ret = c_in_v;
-                v.Score = ret;
                 return ret;
             }
 
             if (I_v == 0)
             {
-                v.Score = -1;
-                return -1;
+                return -1 * _lambda;
             }
 
-            float f1 = I_v / E_max_v;
-            float f2 = 1 / D_v;
-            float f3 = 1 - c_in_v;
-
-            var retScore = (f1 * f2) - f3;
+            float cc = _c_in_v;
+            var retScore = cc + _lambda * (I_v - E_max_v);
             v.Score = retScore;
             return retScore;
         }
