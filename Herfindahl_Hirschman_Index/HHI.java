@@ -57,7 +57,7 @@ public class HHI {
 
 		if(args.length !=1 )
 		{
-			System.out.println("Two arguments required - Input filename & Output filename");
+			System.out.println("Input file argument missing!");
 			System.exit(1);
 		}
 
