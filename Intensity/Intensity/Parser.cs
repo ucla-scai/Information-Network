@@ -126,10 +126,10 @@ namespace Intensity
                     var split = line.Split('\t');
                     var advertiser = int.Parse(split.First());
                     var keyword = int.Parse(split[1]);
-                    var weight = Math.Round(decimal.Parse(split[2]), 2).ToFloat();
-                    if (weight > 0)
+                    //var weight = Math.Round(decimal.Parse(split[2]), 2).ToFloat();
+                    //if (weight > 0)
                     {
-                        graph.AddEdge(advertiser, true, keyword, false, weight);
+                        graph.AddEdge(advertiser, true, keyword, false, 1);
                     }
                     line = reader.ReadLine();
                 }

@@ -83,7 +83,7 @@ namespace Intensity
         public string ToDot()
         {
             Dictionary<string, bool> seen = new Dictionary<string, bool>();
-            var dot = "graph G {\n";
+            var dot = "graph G {\nnode[margin=\"0.06,0,025\" width=0.2 height=0.15 style=filled, fontsize=6, fontname=\"Helvetica\", colorscheme=greens3, color=1];\n";
             var cluster = 0;
             var communities = _nodes.Values.ToList().Select(s => s.Community).Distinct().ToList();
             foreach (var community in communities)
@@ -98,11 +98,10 @@ namespace Intensity
                         var nodeEdge = node.Value.Id.ToString() + " -- " + edge.Node.Id.ToString();
                         var reverse = edge.Node.Id.ToString() + " -- " + node.Value.Id.ToString();
                         if (seen.ContainsKey(nodeEdge) || seen.ContainsKey(reverse)) { continue; }
-                        dot += nodeEdge + " [ label=\"" + edge.Weight.ToString() + "\" ];\n";
+                        dot += nodeEdge + " ;\n";
                         seen[nodeEdge] = true;
                     }
                 }
-                dot += "label = \"" + community.ToString() + "\"\n";
                 dot += "style=dashed\n";
                 dot += "}\n";
                 cluster++;
@@ -115,14 +114,14 @@ namespace Intensity
                     var nodeEdge = node.Value.Id.ToString() + " -- " + edge.Node.Id.ToString();
                     var reverse = edge.Node.Id.ToString() + " -- " + node.Value.Id.ToString();
                     if (seen.ContainsKey(nodeEdge) || seen.ContainsKey(reverse)) { continue; }
-                    dot += nodeEdge + " [ label=\"" + edge.Weight.ToString() + "\" ];\n";
+                    dot += nodeEdge + " ;\n";
                     seen[nodeEdge] = true;
                 }
             }
             foreach (var node in _nodes)
             {
-                var shape = node.Value.IsAdvertiser ? "ellipse,style=filled,color=firebrick,fontcolor=white" : "box,style=filled,color=grey,fontcolor=white";
-                dot += node.Value.Id.ToString() + " [shape=" + shape + "];\n";
+                var shape = node.Value.IsAdvertiser ? "ellipse,style=filled,color=firebrick,fontcolor=white" : "ellipse,style=filled,color=firebrick,fontcolor=white";
+                dot += node.Value.Id.ToString() + " [label=\"\",shape=" + shape + "];\n";
             }
             dot += "}";
             return dot;

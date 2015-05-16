@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Diagnostics;
 
 namespace Intensity
 {
@@ -24,6 +25,28 @@ namespace Intensity
             args.Add("-o");
             args.Add(output);
             Program.Main(args.ToArray());
+        }
+
+        public static void Test_Small_Graph()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\demo.dat";
+            var parser = new Parser();
+            var graph = parser.FromFile(input);
+            //var intensity = new Intensity(graph, float.Parse("1"));
+            //intensity.Init();
+            //var score = intensity.Run();
+            Debug.WriteLine(graph.ToDot());
+            //Console.WriteLine("score=" + score);
+            //Debug.WriteLine("score=" + score);
+        }
+
+        public static void Test_5905_Graph()
+        {
+            var output = @"C:\Users\Justin\Desktop\20130109\output_5905_graph.dat";
+            var keywords = @"C:\Users\Justin\Desktop\20130109\20130109_keywords.dat";
+            var advertisers = @"C:\Users\Justin\Desktop\20130109\20130109_advertisers.dat";
+            var parser = new Parser();
+            parser.ToFile(advertisers, keywords, output, 1, 5905);
         }
 
         public static void Test_Advertiser_Keywords()

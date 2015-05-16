@@ -7,10 +7,18 @@ namespace Intensity
 {
     public class MessageEventArgs : EventArgs { public string Message;}
 
+    public enum Decision
+    {
+        Weights = 0,
+        HighIntensity = 1,
+        LowIntensity = 2
+    }
+
     public class Intensity
     {
         Graph _graph;
         float _lambda;
+        Decision _decision;
 
         public event EventHandler Message;
         public void OnMessage(string message)
@@ -19,10 +27,11 @@ namespace Intensity
             Message(this, new MessageEventArgs() { Message = message });
         }
 
-        public Intensity(Graph graph, float lambda)
+        public Intensity(Graph graph, float lambda, Decision decision)
         {
             _graph = graph;
             _lambda = lambda;
+            _decision = decision;
         }
 
         public void Init()
@@ -31,6 +40,34 @@ namespace Intensity
             for (var i = 0; i < nodes.Count; i++)
             {
                 nodes[i].Value.Community = i;
+            }
+            MoveKeywords();
+        }
+
+        private void MoveKeywords()
+        {
+            var weights = _decision == Decision.Weights;
+            var highIntesity = _decision == Decision.HighIntensity;
+            var lowIntensity = _decision == Decision.LowIntensity;
+
+            foreach (var keyword in _graph.Nodes.ToList())
+            {
+                if (keyword.Value.IsAdvertiser) { continue; }
+                var maxCommunityWeight = -1f;
+                var maxCommunity = -1;
+                var communityWeights = new Dictionary<int, float>();
+                foreach(var advertiserEdge in keyword.Value.Edges.ToList())
+                {
+                    var weight = advertiserEdge.Weight;
+                    var community = advertiserEdge.Node.Community;
+                    if (communityWeights.ContainsKey(community)) { communityWeights[community] += weight; } else { communityWeights[community] = weight; }
+                    if (communityWeights[community] > maxCommunityWeight)
+                    {
+                        maxCommunityWeight = communityWeights[community];
+                        maxCommunity = community;
+                    }
+                }
+                keyword.Value.Community = maxCommunity;
             }
         }
 
@@ -72,7 +109,6 @@ namespace Intensity
                         {
                             advertisersToCheck[a.Node.Id] = a.Node;
                         }
-                        
                     }
 
                     foreach (var p in advertisersToCheck.ToList())
@@ -82,16 +118,11 @@ namespace Intensity
 
                     var comOrig = v.Value.Community;
                     var notSameCommunities = new Dictionary<int, bool>();
-                    var community = v.Value.Community;
-                    for (var i = 0; i < edges.Count; i++)
+                    foreach (var a in advertisersToCheck.ToList())
                     {
-                        var keyword = edges[i].Node;
-                        foreach (var a in keyword.Edges.ToList())
-                        {
-                            notSameCommunities[a.Node.Community] = true;
-                        }
+                        notSameCommunities[a.Community] = true;
                     }
-                    if (notSameCommunities.ContainsKey(community)) { notSameCommunities.Remove(community); }
+                    if (notSameCommunities.ContainsKey(comOrig)) { notSameCommunities.Remove(comOrig); }
 
                     foreach (var c in notSameCommunities.Keys)
                     {
@@ -125,6 +156,7 @@ namespace Intensity
                         {
                             cur_p = n_p;
                             comOrig = v.Value.Community;
+                            MoveKeywords();
                         }
                         else
                         {
@@ -149,7 +181,7 @@ namespace Intensity
     public class Calculator
     {
         private Node v;
-        private ListDictionary<int, Edge> internals;
+        private ListDictionary<int, Edge> communityKeywordEdges;
         private float E_max_v;
         float I_v;
         float _lambda;
@@ -159,29 +191,29 @@ namespace Intensity
             _lambda = lambda;
             v = node;
             var edges = v.Edges.ToList();
-            internals = new ListDictionary<int, Edge>();
+            communityKeywordEdges = new ListDictionary<int, Edge>();
             Dictionary<int, float> diffComHash = new Dictionary<int, float>();
             E_max_v = 0;
             I_v = 0;
-            foreach (var edge in edges)
+            foreach (var keywordEdge in edges)
             {
-                if (edge.Node.Community != v.Community)
+                if (keywordEdge.Node.Community != v.Community)
                 {
-                    if (diffComHash.ContainsKey(edge.Node.Community))
+                    if (diffComHash.ContainsKey(keywordEdge.Node.Community))
                     {
-                        diffComHash[edge.Node.Community]+=edge.Weight;
+                        diffComHash[keywordEdge.Node.Community] += keywordEdge.Weight;
                     }
                     else
                     {
-                        diffComHash[edge.Node.Community] = edge.Weight;
+                        diffComHash[keywordEdge.Node.Community] = keywordEdge.Weight;
                     }
-                    float maxTest = diffComHash[edge.Node.Community];
+                    float maxTest = diffComHash[keywordEdge.Node.Community];
                     if (E_max_v < maxTest) { E_max_v = maxTest; }
                 }
                 else
                 {
-                    internals[edge.Node.Id] = edge;
-                    I_v += edge.Weight;
+                    communityKeywordEdges[keywordEdge.Node.Id] = keywordEdge;
+                    I_v += keywordEdge.Weight;
                 }
             }
         }
@@ -196,11 +228,11 @@ namespace Intensity
                 {
                     has_c_in_v = true;
                     
-                    var n = 0f;
                     var sum = 0f;
-                    foreach (var intern in internals.ToList())
+                    var seenAdvertisers = new Dictionary<int, bool>();
+                    foreach (var communityKeywordEdge in communityKeywordEdges.ToList())
                     {
-                        var keyword = intern.Node;
+                        var keyword = communityKeywordEdge.Node;
                         var attachedAdvertisers = keyword.Edges.ToList();
                             
                         foreach (var attachedAdvertiser in attachedAdvertisers)
@@ -208,11 +240,12 @@ namespace Intensity
                             if (attachedAdvertiser.Node.Community == v.Community)
                             {
                                 sum += attachedAdvertiser.Weight;
-                                n++;
+                                seenAdvertisers[attachedAdvertiser.Node.Id] = true;
                             }
                         }
                     }
-                    _c_in_v = n == 0 ? 0 : sum / n;
+                    var n = seenAdvertisers.Count.ToFloat();
+                    _c_in_v = n.Is(0) ? 0 : sum / n;
                 }
                 return _c_in_v;
             }
@@ -231,9 +264,8 @@ namespace Intensity
                 return -1 * _lambda;
             }
 
-            float cc = _c_in_v;
+            float cc = c_in_v;
             var retScore = cc + _lambda * (I_v - E_max_v);
-            v.Score = retScore;
             return retScore;
         }
     }

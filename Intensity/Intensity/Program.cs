@@ -12,6 +12,9 @@ namespace Intensity
     {
         public static void Main(string[] args)
         {
+            //Tests.Test_Small_Graph();
+            //return;
+
             if (args.Length == 0)
             {
                 Help();
@@ -34,12 +37,14 @@ namespace Intensity
             }
             Console.WriteLine("\n<DONE>");
             Debug.WriteLine("\n<DONE>");
+            Console.Read();
         }
 
         private static void Intensity(string[] args)
         {
             string input = null;
             string lambda = "1";
+            string decision = "0";
             for (var i = 0; i < args.Length; i++)
             {
                 if (args[i] == "-i" || args[i] == "--input")
@@ -50,9 +55,14 @@ namespace Intensity
                 {
                     lambda = args[i + 1];
                 }
+                if (args[i] == "-d" || args[i] == "--decision")
+                {
+                    decision = args[i + 1];
+                }
             }
             var graph = new Parser().FromFile(input);
-            var intensity = new Intensity(graph, float.Parse(lambda));
+            var decisionEnum = (Decision)int.Parse(decision);
+            var intensity = new Intensity(graph, float.Parse(lambda), decisionEnum);
             intensity.Init();
             intensity.Message += new EventHandler(Intensity_Message);
             var score = intensity.Run();
@@ -103,10 +113,11 @@ namespace Intensity
             Console.WriteLine("Intensity: Information Network Analysis");
             Console.WriteLine("DPAS");
             Console.WriteLine("");
-            Console.WriteLine("Intensity [-l] [--lambda] [-s] [--sectors] [-i] [--input] [-p] [--parse] [-a] [--advertiser] [-k] [--keyword] [-o] [--output] [-h] [--help]");
+            Console.WriteLine("Intensity [-l] [--lambda] [-d] [--decision] [-s] [--sectors] [-i] [--input] [-p] [--parse] [-a] [--advertiser] [-k] [--keyword] [-o] [--output] [-h] [--help]");
             Console.WriteLine("");
             Console.WriteLine(Line("i", "input", "run intensity with given input file"));
             Console.WriteLine(Line("l", "lambda", "lambda coefficient used in intensity metric"));
+            Console.WriteLine(Line("d", "decision", "which decision to take when placing keywords into a community, values are 0, 1, or 2 for weights, high intensity, and low intensity respective"));
             Console.WriteLine(Line("p", "parse", "build an output graph from raw data -a, -k, and -o flags must be set"));
             Console.WriteLine(Line("s", "sectors", "for building output file how many random sectors to include"));
             Console.WriteLine(Line("a", "advertiser", "raw advertiser data file"));
