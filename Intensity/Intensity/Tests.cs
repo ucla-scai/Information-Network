@@ -27,24 +27,110 @@ namespace Intensity
             Program.Main(args.ToArray());
         }
 
-        public static void Test_Small_Graph()
+        public static void Test_Small_Graph_Dot()
         {
             var input = @"C:\Users\Justin\Desktop\20130109\demo.dat";
             var parser = new Parser();
             var graph = parser.FromFile(input);
-            //var intensity = new Intensity(graph, float.Parse("1"));
-            //intensity.Init();
-            //var score = intensity.Run();
             Debug.WriteLine(graph.ToDot());
-            //Console.WriteLine("score=" + score);
-            //Debug.WriteLine("score=" + score);
+        }
+
+        public static void Test_Filtering()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph.dat";
+            var parser = new Parser();
+            var graph = parser.FromFile(input, true);
+            var filtered = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph_filtered.dat";
+            if (File.Exists(filtered)) { File.Delete(filtered); }
+            File.WriteAllText(filtered, graph.ToDot());
+        }
+
+        public static void Test_Filtered()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph.dat";
+            var preDot = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph_pre.dot";
+            var postDot = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph_post.dot";
+            var communitiyFile = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph_com.dat";
+            var parser = new Parser();
+            var graph = parser.FromFile(input, true);
+            var intensity = new Intensity(graph, 1.0f, Decision.Weights);
+            intensity.Init();
+            if (File.Exists(preDot)) { File.Delete(preDot); }
+            File.WriteAllText(preDot, graph.ToDot(DotOptions.Paper));
+            intensity.Run();
+            if (File.Exists(postDot)) { File.Delete(postDot); }
+            File.WriteAllText(postDot, graph.ToDot(DotOptions.RedGray | DotOptions.Small));
+            if (File.Exists(communitiyFile)) { File.Delete(communitiyFile); }
+            File.WriteAllText(communitiyFile, graph.ToCommunities());
+        }
+
+        public static void Test_Small_Graph_Dot_File()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph.dat";
+            var parser = new Parser();
+            var graph = parser.FromFile(input);
+            var preDot = @"C:\Users\Justin\Desktop\20130109\demo_pre.dot";
+            if (File.Exists(preDot)) { File.Delete(preDot); }
+            File.WriteAllText(preDot, graph.ToDot());
+        }
+
+        public static void Test_W_2()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\input_w_2.dat";
+            var parser = new Parser();
+            var graph = parser.FromFile(input);
+            var intensity = new Intensity(graph, 1.0f, Decision.Weights);
+            intensity.Init();
+            Debug.WriteLine(graph.ToDot());
+            intensity.Run();
+            Debug.WriteLine(graph.ToDot());
+        }
+
+        public static void Test_W_1()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\input_w_1.dat";
+            var parser = new Parser();
+            var graph = parser.FromFile(input);
+            var intensity = new Intensity(graph, 0.5f, Decision.Weights);
+            intensity.Init();
+            Debug.WriteLine(graph.ToDot());
+            intensity.Run();
+            Debug.WriteLine(graph.ToDot());
+        }
+
+        public static void Test_Small_Graph()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\input.dat";
+            var parser = new Parser();
+            var graph = parser.FromFile(input);
+            var intensity = new Intensity(graph, 0.5f, Decision.Weights);
+            intensity.Init();
+            intensity.Run();
+            Debug.WriteLine(graph.ToString());
+        }
+
+        public static void Test_5905_Dot()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\output_5905_graph_filtered.dat";
+            var preDot = @"C:\Users\Justin\Desktop\20130109\output_5905_graph_filtered_pre.dot";
+            var postDot = @"C:\Users\Justin\Desktop\20130109\output_5905_graph_filtered_post.dot";
+            var parser = new Parser();
+            var graph = parser.FromFile(input);
+            var intensity = new Intensity(graph, 1.0f, Decision.Weights);
+            intensity.Init();
+            if (File.Exists(preDot)) { File.Delete(preDot); }
+            File.WriteAllText(preDot, graph.ToDot(DotOptions.Paper));
+            intensity.Run();
+            if (File.Exists(postDot)) { File.Delete(postDot); }
+            File.WriteAllText(postDot, graph.ToDot());
         }
 
         public static void Test_5905_Graph()
         {
-            var output = @"C:\Users\Justin\Desktop\20130109\output_5905_graph.dat";
+            var output = @"C:\Users\Justin\Desktop\20130109\output_5905_graph_filtered.dat";
             var keywords = @"C:\Users\Justin\Desktop\20130109\20130109_keywords.dat";
             var advertisers = @"C:\Users\Justin\Desktop\20130109\20130109_advertisers.dat";
+            if (File.Exists(output)) { File.Delete(output); }
             var parser = new Parser();
             parser.ToFile(advertisers, keywords, output, 1, 5905);
         }

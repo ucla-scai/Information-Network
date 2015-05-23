@@ -12,8 +12,8 @@ namespace Intensity
     {
         public static void Main(string[] args)
         {
-            //Tests.Test_Small_Graph();
-            //return;
+            Tests.Test_Filtered();
+            return;
 
             if (args.Length == 0)
             {

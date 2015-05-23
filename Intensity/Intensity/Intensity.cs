@@ -167,7 +167,7 @@ namespace Intensity
                     sum += cur_p;
                 }
             }
-            float netw_intensity = sum / _graph.Nodes.ToList().Count.ToFloat();
+            float netw_intensity = sum / _graph.AdvertiserCount.ToFloat();
             return netw_intensity;
         }
 
