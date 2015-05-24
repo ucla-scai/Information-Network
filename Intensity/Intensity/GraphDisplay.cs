@@ -15,8 +15,11 @@ namespace Intensity
         EdgeLabels = 0x20,
         CommunityLabels = 0x40,
         NoCommunities = 0x80,
+        NoOveralp = 0x100,
+        EdgesFirst = 0x200,
+        TransparentEdges = 0x400,
         Labels = (NodeLabels | EdgeLabels | CommunityLabels),
-        Pdf = (BoxAndCircles  | RedGray | Labels),
+        Pdf = (BoxAndCircles  | RedGray | Labels | NoOveralp),
         Paper = (RedGray | Small | NoCommunities)
     }
 
@@ -39,7 +42,8 @@ namespace Intensity
         {
             var dot = new StringBuilder();
             Dictionary<string, bool> seen = new Dictionary<string, bool>();
-            if (dotOptions.HasFlag(DotOptions.Pdf)) { dot.Append("graph G {\noverlap = false;\n"); } else { dot.Append("graph G {\n"); }
+            if (dotOptions.HasFlag(DotOptions.NoOveralp)) { dot.Append("graph G {\noverlap = false;\n"); } else { dot.Append("graph G {\n"); }
+            if (dotOptions.HasFlag(DotOptions.EdgesFirst)) { dot.Append("outputorder=edgesfirst;\n"); }
             var str = dotOptions.HasFlag(DotOptions.Small) ? "node[margin=\"0.06,0,025\" width=0.2 height=0.15 style=filled, fontsize=6, fontname=\"Helvetica\", colorscheme=greens3, color=1];\n" : string.Empty;
             dot.Append(str);
             var cluster = 0;
@@ -79,7 +83,8 @@ namespace Intensity
                     var nodeEdge = node.Value.Id.ToString() + " -- " + edge.Node.Id.ToString();
                     var reverse = edge.Node.Id.ToString() + " -- " + node.Value.Id.ToString();
                     if (seen.ContainsKey(nodeEdge) || seen.ContainsKey(reverse)) { continue; }
-                    str = dotOptions.HasFlag(DotOptions.EdgeLabels) ? nodeEdge + " [ label=\"" + edge.Weight.ToString() + "\" ];\n" : nodeEdge + " ;\n";
+                    var extra = dotOptions.HasFlag(DotOptions.TransparentEdges) ? ",color=\"#0000005f\"" : "";
+                    str = dotOptions.HasFlag(DotOptions.EdgeLabels) ? nodeEdge + " [ label=\"" + edge.Weight.ToString() + "\"" + extra + " ];\n" : dotOptions.HasFlag(DotOptions.TransparentEdges) ? nodeEdge + " [ color=\"#0000005f\" ];\n" : nodeEdge + " ;\n";
                     dot.Append(str);
                     seen[nodeEdge] = true;
                 }
@@ -102,12 +107,12 @@ namespace Intensity
 
         public static string ToCommunities(Graph g)
         {
-            Dictionary<int, Dictionary<int, Node>> communityIds = new Dictionary<int, Dictionary<int, Node>>();
+            Dictionary<int, Dictionary<string, Node>> communityIds = new Dictionary<int, Dictionary<string, Node>>();
             StringBuilder str = new StringBuilder();
 
             foreach (var node in g.Nodes)
             {
-                if (!communityIds.ContainsKey(node.Value.Community)) { communityIds[node.Value.Community] = new Dictionary<int, Node>(); }
+                if (!communityIds.ContainsKey(node.Value.Community)) { communityIds[node.Value.Community] = new Dictionary<string, Node>(); }
                 communityIds[node.Value.Community][node.Value.Id] = node.Value;
             }
             var communities = communityIds.Count;

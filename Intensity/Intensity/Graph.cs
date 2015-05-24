@@ -18,9 +18,9 @@ namespace Intensity
         private bool _dirty = false;
         private int _community = -1;
         public int Community { get { return _community; } set { _dirty = true; _community = value; } }
-        public int Id;
+        public string Id;
 
-        public ListDictionary<int, Edge> Edges = new ListDictionary<int, Edge>();
+        public ListDictionary<string, Edge> Edges = new ListDictionary<string, Edge>();
         public bool IsAdvertiser;
         public bool IsDirty { get { return _dirty; } set { _dirty = value; } }
 
@@ -34,19 +34,19 @@ namespace Intensity
     public class Graph
     {
         private int _advertiserCount = 0;
-        private Dictionary<int, Node> _nodes = new Dictionary<int, Node>();
+        private Dictionary<string, Node> _nodes = new Dictionary<string, Node>();
         
         public int AdvertiserCount { get { return _advertiserCount; } }
-        public Dictionary<int, Node> Nodes { get { return _nodes; } }
+        public Dictionary<string, Node> Nodes { get { return _nodes; } }
 
-        public void AddNode(int node, bool isAdvertiser)
+        public void AddNode(string node, bool isAdvertiser)
         {
             if (_nodes.ContainsKey(node)) { return; }
             if (isAdvertiser) { _advertiserCount++; }
             _nodes[node] = new Node(this) { Id = node, IsAdvertiser = isAdvertiser };
         }
 
-        public void AddEdge(int a, bool aIsAdvertiser, int b, bool bIsAdvertiser, float weight)
+        public void AddEdge(string a, bool aIsAdvertiser, string b, bool bIsAdvertiser, float weight)
         {
             if (!_nodes.ContainsKey(a)) { AddNode(a, aIsAdvertiser); }
             if (!_nodes.ContainsKey(b)) { AddNode(b, bIsAdvertiser); }

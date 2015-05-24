@@ -12,7 +12,7 @@ namespace Intensity
     {
         public static void Main(string[] args)
         {
-            Tests.Test_Filtered();
+            Tests.Test_Wen();
             return;
 
             if (args.Length == 0)

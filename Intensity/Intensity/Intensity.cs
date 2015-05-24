@@ -101,7 +101,7 @@ namespace Intensity
 
                     float cur_p_neig = 0;
                     var edges = v.Value.Edges.ToList();
-                    var advertisersToCheck = new ListDictionary<int, Node>();
+                    var advertisersToCheck = new ListDictionary<string, Node>();
                     foreach (var k in edges)
                     {
                         var keyword = k.Node;
@@ -181,7 +181,7 @@ namespace Intensity
     public class Calculator
     {
         private Node v;
-        private ListDictionary<int, Edge> communityKeywordEdges;
+        private ListDictionary<string, Edge> communityKeywordEdges;
         private float E_max_v;
         float I_v;
         float _lambda;
@@ -191,7 +191,7 @@ namespace Intensity
             _lambda = lambda;
             v = node;
             var edges = v.Edges.ToList();
-            communityKeywordEdges = new ListDictionary<int, Edge>();
+            communityKeywordEdges = new ListDictionary<string, Edge>();
             Dictionary<int, float> diffComHash = new Dictionary<int, float>();
             E_max_v = 0;
             I_v = 0;
@@ -229,7 +229,7 @@ namespace Intensity
                     has_c_in_v = true;
                     
                     var sum = 0f;
-                    var seenAdvertisers = new Dictionary<int, bool>();
+                    var seenAdvertisers = new Dictionary<string, bool>();
                     foreach (var communityKeywordEdge in communityKeywordEdges.ToList())
                     {
                         var keyword = communityKeywordEdge.Node;

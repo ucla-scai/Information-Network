@@ -7,8 +7,18 @@ using System.Globalization;
 
 namespace Intensity
 {
+    public enum ParserOptions : uint
+    {
+        None = 0x0,
+        SpaceDelimited = 0x1
+    }
+
     public class Parser
     {
+        ParserOptions _options = ParserOptions.None;
+        public Parser() { }
+        public Parser(ParserOptions options) { _options = options; }
+
         private class KeywordInfo
         {
             public int N = 0;
@@ -139,7 +149,7 @@ namespace Intensity
             var ordered = trees.OrderByDescending(o => o.Depth * o.Count).ToList();
             ordered.RemoveAll(o => o.Depth * o.Count < 200);
             var list = ordered.Take(toTake).ToList();
-            var takeHash = new Dictionary<int, bool>();
+            var takeHash = new Dictionary<string, bool>();
 
             foreach (var tree in list)
             {
@@ -152,8 +162,8 @@ namespace Intensity
             foreach (var line in lines)
             {
                 var split = line.Split('\t');
-                var advertiser = int.Parse(split[0]);
-                var keyword = int.Parse(split[1]);
+                var advertiser = split[0];
+                var keyword = split[1];
                 if (takeHash.ContainsKey(keyword))
                 {
                     filtered.Add(line);
@@ -175,13 +185,42 @@ namespace Intensity
 
         private void Add(string line, Graph graph)
         {
-            var split = line.Split('\t');
-            var advertiser = int.Parse(split.First());
-            var keyword = int.Parse(split[1]);
+            var split = _options.HasFlag(ParserOptions.SpaceDelimited) ? line.Split(' ') : line.Split('\t');
+            var advertiser = split.First();
+            var keyword = split[1];
             var weight = split.Length > 2 ? Math.Round(decimal.Parse(split[2]), 2).ToFloat() : 1;
             if (weight > 0)
             {
                 graph.AddEdge(advertiser, true, keyword, false, weight);
+            }
+        }
+
+        public void Clean(string input, string output)
+        {
+            var lines = new List<string>();
+            using (var reader = new StreamReader(input))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    var split = line.Split('\t');
+                    var advertiser = int.Parse(split[0]);
+                    var keyword = int.Parse(split[1]);
+                    var weight = float.Parse(split[2]);
+                    if (!weight.Is(0))
+                    {
+                        lines.Add(line);
+                    }
+                    line = reader.ReadLine();
+                }
+            }
+
+            using (var writer = new StreamWriter(output))
+            {
+                foreach (var line in lines)
+                {
+                    writer.WriteLine(line);
+                }
             }
         }
 

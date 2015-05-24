@@ -17,7 +17,7 @@ namespace Intensity
         public List<Tree> Forest()
         {
             var forest = new List<Tree>();
-            var seen = new Dictionary<int, bool>();
+            var seen = new Dictionary<string, bool>();
 
             while (true)
             {
@@ -49,7 +49,7 @@ namespace Intensity
         public List<TreeNode> Children { get; set; }
         public int Level { get; set; }
         public Node Node { get; set; }
-        public int Id { get { return Node.Id; } }
+        public string Id { get { return Node.Id; } }
     }
 
     public class Tree
@@ -57,7 +57,7 @@ namespace Intensity
         private TreeNode _treeRoot;
         private int _depth = 0;
         private int _count = 0;
-        private ListDictionary<int, Node> _flat = new ListDictionary<int, Node>();
+        private ListDictionary<string, Node> _flat = new ListDictionary<string, Node>();
 
         public TreeNode Root { get { return _treeRoot; } }
         public int Depth { get { return _depth; } }

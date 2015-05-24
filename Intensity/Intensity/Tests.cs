@@ -45,6 +45,35 @@ namespace Intensity
             File.WriteAllText(filtered, graph.ToDot());
         }
 
+        public static void Test_Cleaned()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph.dat";
+            var cleaned = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph_cleaned.dat";
+            if (File.Exists(cleaned)) { File.Delete(cleaned); }
+            var parser = new Parser();
+            parser.Clean(input, cleaned);
+        }
+
+        public static void Test_Wen()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\graph.txt";
+            var preDotPaper = @"C:\Users\Justin\Desktop\20130109\graph_pre_paper.dot";
+            var preDotPdf = @"C:\Users\Justin\Desktop\20130109\graph_pre_pdf.dot";
+            var preDotCustomSmall = @"C:\Users\Justin\Desktop\20130109\graph_pre_custom_small.dot";
+            var preDotCustomNormal = @"C:\Users\Justin\Desktop\20130109\graph_pre_custom_normal.dot";
+            var parser = new Parser(ParserOptions.SpaceDelimited);
+            var graph = parser.FromFile(input);
+            if (File.Exists(preDotPaper)) { File.Delete(preDotPaper); }
+            if (File.Exists(preDotPdf)) { File.Delete(preDotPdf); }
+            if (File.Exists(preDotCustomSmall)) { File.Delete(preDotCustomSmall); }
+            if (File.Exists(preDotCustomNormal)) { File.Delete(preDotCustomNormal); }
+            File.WriteAllText(preDotPaper, graph.ToDot(DotOptions.Paper));
+            File.WriteAllText(preDotPdf, graph.ToDot(DotOptions.Pdf));
+            File.WriteAllText(preDotCustomSmall, graph.ToDot(DotOptions.SameColor | DotOptions.NodeLabels | DotOptions.NoCommunities | DotOptions.NoOveralp | DotOptions.Small | DotOptions.TransparentEdges));
+            File.WriteAllText(preDotCustomNormal, graph.ToDot(DotOptions.SameColor | DotOptions.NodeLabels | DotOptions.NoCommunities | DotOptions.NoOveralp));
+            //BoxAndCircles  | RedGray | Labels | NoOveralp
+        }
+
         public static void Test_Filtered()
         {
             var input = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph.dat";
