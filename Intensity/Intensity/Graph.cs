@@ -35,8 +35,10 @@ namespace Intensity
     {
         private int _advertiserCount = 0;
         private Dictionary<string, Node> _nodes = new Dictionary<string, Node>();
-        
+        private List<string> _lines = new List<string>();
+
         public int AdvertiserCount { get { return _advertiserCount; } }
+        public int Count { get { return _nodes.Count; } }
         public Dictionary<string, Node> Nodes { get { return _nodes; } }
 
         public void AddNode(string node, bool isAdvertiser)
@@ -55,8 +57,14 @@ namespace Intensity
             if (!_nodes[b].Edges.ContainsKey(a)) { _nodes[b].Edges[a] = new Edge() { Node = _nodes[a], Weight = weight }; }
         }
 
+        public void AddLine(string line)
+        {
+            _lines.Add(line);
+        }
+
         public override string ToString() { return GraphDisplay.ToString(this); }
         public string ToDot(DotOptions dotOptions = DotOptions.Paper) { return GraphDisplay.ToDot(this, dotOptions); }
         public string ToCommunities() { return GraphDisplay.ToCommunities(this); }
+        public List<string> ToFile() { return _lines; }
     }
 }

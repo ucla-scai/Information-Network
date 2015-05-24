@@ -14,7 +14,45 @@ namespace Intensity
         LowIntensity = 2
     }
 
-    public class Intensity
+    public class IntensityByAdvertiser : Intensity
+    {
+        private Graph graph;
+        private float p;
+        private Decision decision;
+
+        public IntensityByAdvertiser(Graph graph, float p, Decision decision) : base(graph, p, decision)
+        {
+        }
+        public override bool ContinueWithHeuristic(Node n)
+        {
+            return !n.IsAdvertiser;
+        }
+
+        public override bool ContinueWithIteration(Node n)
+        {
+            return n.IsAdvertiser;
+        }
+    }
+
+    public class IntensityByKeyword : Intensity
+    {
+        public IntensityByKeyword(Graph graph, float p, Decision decision)
+            : base(graph, p, decision)
+        {
+        }
+
+        public override bool ContinueWithHeuristic(Node n)
+        {
+            return n.IsAdvertiser;
+        }
+
+        public override bool ContinueWithIteration(Node n)
+        {
+            return !n.IsAdvertiser;
+        }
+    }
+
+    public abstract class Intensity
     {
         Graph _graph;
         float _lambda;
@@ -52,11 +90,11 @@ namespace Intensity
 
             foreach (var keyword in _graph.Nodes.ToList())
             {
-                if (keyword.Value.IsAdvertiser) { continue; }
+                if (!ContinueWithHeuristic(keyword.Value)) { continue; }
                 var maxCommunityWeight = -1f;
                 var maxCommunity = -1;
                 var communityWeights = new Dictionary<int, float>();
-                foreach(var advertiserEdge in keyword.Value.Edges.ToList())
+                foreach (var advertiserEdge in keyword.Value.Edges.ToList())
                 {
                     var weight = advertiserEdge.Weight;
                     var community = advertiserEdge.Node.Community;
@@ -70,6 +108,9 @@ namespace Intensity
                 keyword.Value.Community = maxCommunity;
             }
         }
+
+        public abstract bool ContinueWithIteration(Node n);
+        public abstract bool ContinueWithHeuristic(Node n);
 
         public float Run()
         {
@@ -90,7 +131,7 @@ namespace Intensity
                     nodeCount++;
                     OnMessage("running iteration=" + iter.ToString() + "\n" + "node=" + nodeCount.ToString() + "\n" + "completed=" + (100.0m * (nodeCount.ToDecimal() / nodes.Count.ToDecimal())).ToString() + "%");
 
-                    if (!v.Value.IsAdvertiser) { continue; }
+                    if (!ContinueWithIteration(v.Value)) { continue; }
 
                     var cur_p = Score(v.Value);
                     if (cur_p.Is(_lambda + 1f))
@@ -130,7 +171,7 @@ namespace Intensity
                         float n_p = Score(v.Value);
 
                         float n_p_neig = 0;
-                        
+
                         if (cur_p < n_p)
                         {
                             var advertisersToCheckList = advertisersToCheck.ToList();
@@ -139,7 +180,7 @@ namespace Intensity
                                 var t = advertisersToCheckList[i];
                                 n_p_neig += Score(t);
                                 var left = advertisersToCheckList.Count - i - 1;
-                                if (cur_p_neig >= ((1+ _lambda) * left) + n_p_neig)
+                                if (cur_p_neig >= ((1 + _lambda) * left) + n_p_neig)
                                 {
                                     i++;
                                     while (i < advertisersToCheckList.Count)
@@ -227,14 +268,14 @@ namespace Intensity
                 if (!has_c_in_v)
                 {
                     has_c_in_v = true;
-                    
+
                     var sum = 0f;
                     var seenAdvertisers = new Dictionary<string, bool>();
                     foreach (var communityKeywordEdge in communityKeywordEdges.ToList())
                     {
                         var keyword = communityKeywordEdge.Node;
                         var attachedAdvertisers = keyword.Edges.ToList();
-                            
+
                         foreach (var attachedAdvertiser in attachedAdvertisers)
                         {
                             if (attachedAdvertiser.Node.Community == v.Community)

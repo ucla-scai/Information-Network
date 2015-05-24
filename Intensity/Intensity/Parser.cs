@@ -191,6 +191,7 @@ namespace Intensity
             var weight = split.Length > 2 ? Math.Round(decimal.Parse(split[2]), 2).ToFloat() : 1;
             if (weight > 0)
             {
+                graph.AddLine(line);
                 graph.AddEdge(advertiser, true, keyword, false, weight);
             }
         }

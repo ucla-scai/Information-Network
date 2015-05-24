@@ -9,6 +9,59 @@ namespace Intensity
 {
     public class Tests
     {
+
+        public static void Test_4Ari()
+        {
+            var input = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph.dat";
+            var adv_norm = @"C:\Users\Justin\Desktop\20130109\adv_norm";
+            var key_norm = @"C:\Users\Justin\Desktop\20130109\key_norm";
+            var wfile = @"C:\Users\Justin\Desktop\20130109\wtfile";
+            var perm_ky = @"C:\Users\Justin\Desktop\20130109\perm_ky";
+            var perm_adv = @"C:\Users\Justin\Desktop\20130109\perm_adv";
+            var parser = new Parser();
+            var graph = parser.FromFile(input, true);
+            wfile.DeleteWrite(graph.ToFile());
+            var modPermCount = new ModPermCount(graph, 1.0f, Decision.Weights);
+            modPermCount.Init();
+            modPermCount.Message += (o, e) =>
+            {
+                Console.Clear();
+                Console.WriteLine(((MessageEventArgs)e).Message);
+            };
+            modPermCount.Run();
+            perm_ky.DeleteWrite(graph.ToCommunities());
+            
+            var modPermMaxPerm = new ModPermMaxPerm(graph, 1.0f, Decision.Weights);
+            modPermMaxPerm.Init();
+            modPermMaxPerm.Message += (o, e) =>
+            {
+                Console.Clear();
+                Console.WriteLine(((MessageEventArgs)e).Message);
+            };
+            modPermMaxPerm.Run();
+            perm_adv.DeleteWrite(graph.ToCommunities());
+
+            var intensityByAdvertiser = new IntensityByAdvertiser(graph, 1.0f, Decision.Weights);
+            intensityByAdvertiser.Init();
+            intensityByAdvertiser.Message += (o, e) =>
+            {
+                Console.Clear();
+                Console.WriteLine(((MessageEventArgs)e).Message);
+            };
+            intensityByAdvertiser.Run();
+            adv_norm.DeleteWrite(graph.ToCommunities());
+
+            var intensityByKeyword = new IntensityByKeyword(graph, 1.0f, Decision.Weights);
+            intensityByKeyword.Init();
+            intensityByKeyword.Message += (o, e) =>
+            {
+                Console.Clear();
+                Console.WriteLine(((MessageEventArgs)e).Message);
+            };
+            intensityByKeyword.Run();
+            key_norm.DeleteWrite(graph.ToCommunities());
+        }
+
         public static void Test_Parse()
         {
             var output = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph.dat";
@@ -82,10 +135,15 @@ namespace Intensity
             var communitiyFile = @"C:\Users\Justin\Desktop\20130109\output_ari_one_sect_graph_com.dat";
             var parser = new Parser();
             var graph = parser.FromFile(input, true);
-            var intensity = new Intensity(graph, 1.0f, Decision.Weights);
+            var intensity = new ModPermMaxPerm(graph, 1.0f, Decision.Weights);
             intensity.Init();
             if (File.Exists(preDot)) { File.Delete(preDot); }
             File.WriteAllText(preDot, graph.ToDot(DotOptions.Paper));
+            intensity.Message += (o, e) =>
+            {
+                Console.Clear();
+                Console.WriteLine(((MessageEventArgs)e).Message);
+            };
             intensity.Run();
             if (File.Exists(postDot)) { File.Delete(postDot); }
             File.WriteAllText(postDot, graph.ToDot(DotOptions.RedGray | DotOptions.Small));
@@ -108,7 +166,7 @@ namespace Intensity
             var input = @"C:\Users\Justin\Desktop\20130109\input_w_2.dat";
             var parser = new Parser();
             var graph = parser.FromFile(input);
-            var intensity = new Intensity(graph, 1.0f, Decision.Weights);
+            var intensity = new ModPermMaxPerm(graph, 1.0f, Decision.Weights);
             intensity.Init();
             Debug.WriteLine(graph.ToDot());
             intensity.Run();
@@ -120,7 +178,7 @@ namespace Intensity
             var input = @"C:\Users\Justin\Desktop\20130109\input_w_1.dat";
             var parser = new Parser();
             var graph = parser.FromFile(input);
-            var intensity = new Intensity(graph, 0.5f, Decision.Weights);
+            var intensity = new ModPermMaxPerm(graph, 0.5f, Decision.Weights);
             intensity.Init();
             Debug.WriteLine(graph.ToDot());
             intensity.Run();
@@ -132,7 +190,7 @@ namespace Intensity
             var input = @"C:\Users\Justin\Desktop\20130109\input.dat";
             var parser = new Parser();
             var graph = parser.FromFile(input);
-            var intensity = new Intensity(graph, 0.5f, Decision.Weights);
+            var intensity = new ModPermMaxPerm(graph, 0.5f, Decision.Weights);
             intensity.Init();
             intensity.Run();
             Debug.WriteLine(graph.ToString());
@@ -145,7 +203,7 @@ namespace Intensity
             var postDot = @"C:\Users\Justin\Desktop\20130109\output_5905_graph_filtered_post.dot";
             var parser = new Parser();
             var graph = parser.FromFile(input);
-            var intensity = new Intensity(graph, 1.0f, Decision.Weights);
+            var intensity = new ModPermMaxPerm(graph, 1.0f, Decision.Weights);
             intensity.Init();
             if (File.Exists(preDot)) { File.Delete(preDot); }
             File.WriteAllText(preDot, graph.ToDot(DotOptions.Paper));

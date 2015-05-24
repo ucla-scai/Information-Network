@@ -12,7 +12,7 @@ namespace Intensity
     {
         public static void Main(string[] args)
         {
-            Tests.Test_Wen();
+            Tests.Test_4Ari();
             return;
 
             if (args.Length == 0)
@@ -62,7 +62,7 @@ namespace Intensity
             }
             var graph = new Parser().FromFile(input);
             var decisionEnum = (Decision)int.Parse(decision);
-            var intensity = new Intensity(graph, float.Parse(lambda), decisionEnum);
+            var intensity = new ModPermMaxPerm(graph, float.Parse(lambda), decisionEnum);
             intensity.Init();
             intensity.Message += new EventHandler(Intensity_Message);
             var score = intensity.Run();
