@@ -33,7 +33,7 @@ public class HHI {
 		double hhi_sum = 0;
 		
 		comm_no++;
-		System.out.println("Community:"+comm_no);
+		System.out.print("Community:"+comm_no+" ");
 
 		for(int k=0; k<kyw.size(); k++)
 		{
