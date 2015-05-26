@@ -85,9 +85,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Advertiser.cs" />
+    <Compile Include="Copy %282%29 of Parser.cs" />
+    <Compile Include="Intensity.cs" />
+    <Compile Include="Copy of Parser.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Graph.cs" />
-    <Compile Include="Intensity.cs" />
+    <Compile Include="GraphDisplay.cs" />
+    <Compile Include="ModPerm.cs" />
     <Compile Include="Keyword.cs" />
     <Compile Include="ListDictionary.cs" />
     <Compile Include="Parser.cs" />
@@ -95,6 +99,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Stats.cs" />
     <Compile Include="Tests.cs" />
+    <Compile Include="Tree.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

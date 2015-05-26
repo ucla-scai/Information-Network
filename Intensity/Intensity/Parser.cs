@@ -7,8 +7,18 @@ using System.Globalization;
 
 namespace Intensity
 {
+    public enum ParserOptions : uint
+    {
+        None = 0x0,
+        SpaceDelimited = 0x1
+    }
+
     public class Parser
     {
+        ParserOptions _options = ParserOptions.None;
+        public Parser() { }
+        public Parser(ParserOptions options) { _options = options; }
+
         private class KeywordInfo
         {
             public int N = 0;
@@ -97,40 +107,153 @@ namespace Intensity
                 }
             }
 
+            var lines = new List<string>();
+
+            foreach (var key in keywords.Keys)
+            {
+                var keywordInfo = keywords[key];
+                if (keywordInfo.Sum == 0) { continue; }
+                foreach (var advertiser in keywordInfo.Advertisers.Keys)
+                {
+                    var adKeyString = advertiser.ToString() + "_" + key.ToString();
+                    var advertiserKeyword = advertiserKeywords[adKeyString];
+                    var weight = advertiserKeyword.Consumption.ToDecimal() / keywordInfo.Sum.ToDecimal();
+                    var writeLine = string.Format("{0}\t{1}\t{2}\t{3}\t{4}", advertiser, key, weight, advertiserKeyword.Consumption, keywordInfo.Sum);
+
+                    if (weight > 0)
+                    {
+                        lines.Add(writeLine);
+                    }
+                }
+            }
+
+            lines = Filter(lines);
+
             using (var writer = new StreamWriter(output))
             {
-                foreach (var key in keywords.Keys)
+                foreach (var line in lines)
                 {
-                    var keywordInfo = keywords[key];
-                    if (keywordInfo.Sum == 0) { continue; }
-                    foreach (var advertiser in keywordInfo.Advertisers.Keys)
-                    {
-                        var adKeyString = advertiser.ToString() + "_" + key.ToString();
-                        var advertiserKeyword = advertiserKeywords[adKeyString];
-                        var weight = advertiserKeyword.Consumption.ToDecimal() / keywordInfo.Sum.ToDecimal();
-                        var writeLine = string.Format("{0}\t{1}\t{2}\t{3}\t{4}", advertiser, key, weight, advertiserKeyword.Consumption, keywordInfo.Sum);
-                        writer.WriteLine(writeLine);
-                    }
+                    writer.WriteLine(line);
                 }
             }
         }
 
-        public Graph FromFile(string input)
+        private List<string> Filter(List<string> lines)
+        {
+            var filtered = new List<string>();
+            var graph = FromFile(lines);
+            var bfs = new BFS(graph);
+            var trees = bfs.Forest();
+
+            var toTake = Math.Max((trees.Count.ToFloat() * 0.1f).ToInt(), 1);
+            var ordered = trees.OrderByDescending(o => o.Depth * o.Count).ToList();
+            ordered.RemoveAll(o => o.Depth * o.Count < 200);
+            var list = ordered.Take(toTake).ToList();
+            var takeHash = new Dictionary<string, bool>();
+
+            foreach (var tree in list)
+            {
+                foreach (var node in tree.Flat)
+                {
+                    if (!node.IsAdvertiser) { takeHash[node.Id] = true; }
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                var split = line.Split('\t');
+                var advertiser = split[0];
+                var keyword = split[1];
+                if (takeHash.ContainsKey(keyword))
+                {
+                    filtered.Add(line);
+                }
+            }
+
+            return filtered;
+        }
+
+        private Graph FromFile(List<string> lines)
         {
             var graph = new Graph();
+            foreach (var line in lines)
+            {
+                Add(line, graph);
+            }
+            return graph;
+        }
+
+        private void Add(string line, Graph graph)
+        {
+            var split = _options.HasFlag(ParserOptions.SpaceDelimited) ? line.Split(' ') : line.Split('\t');
+            var advertiser = split.First();
+            var keyword = split[1];
+            var weight = split.Length > 2 ? Math.Round(decimal.Parse(split[2]), 2).ToFloat() : 1;
+            if (weight > 0)
+            {
+                graph.AddLine(line);
+                graph.AddEdge(advertiser, true, keyword, false, weight);
+            }
+        }
+
+        public void Clean(string input, string output)
+        {
+            var lines = new List<string>();
             using (var reader = new StreamReader(input))
             {
                 var line = reader.ReadLine();
                 while (line != null)
                 {
                     var split = line.Split('\t');
-                    var advertiser = int.Parse(split.First());
+                    var advertiser = int.Parse(split[0]);
                     var keyword = int.Parse(split[1]);
-                    var weight = Math.Round(decimal.Parse(split[2]), 2).ToFloat();
-                    if (weight > 0)
+                    var weight = float.Parse(split[2]);
+                    if (!weight.Is(0))
                     {
-                        graph.AddEdge(advertiser, true, keyword, false, weight);
+                        lines.Add(line);
                     }
+                    line = reader.ReadLine();
+                }
+            }
+
+            using (var writer = new StreamWriter(output))
+            {
+                foreach (var line in lines)
+                {
+                    writer.WriteLine(line);
+                }
+            }
+        }
+
+        public Graph FromFile(string input, bool filter)
+        {
+            var graph = new Graph();
+            var lines = new List<string>();
+            using (var reader = new StreamReader(input))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    lines.Add(line);
+                    line = reader.ReadLine();
+                }
+            }
+
+            lines = Filter(lines);
+            lines.ForEach(f => Add(f, graph));
+            return graph;
+        }
+
+        public Graph FromFile(string input)
+        {
+            var graph = new Graph();
+            var lines = new List<string>();
+            using (var reader = new StreamReader(input))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    Add(line, graph);
                     line = reader.ReadLine();
                 }
             }
