@@ -8,7 +8,7 @@ import java.io.*;
 		      Every community should contain the community id within []
 */
 
-public class HHI {
+public class CCI {
 
 	static Hashtable<String,String> adv_key_cnsm = new Hashtable<String,String>();
 	static ArrayList<String> adv = new ArrayList<String>();
@@ -29,28 +29,31 @@ public class HHI {
             	br.close();
 	}
 
-	public static void calculateHHI() {
-		double hhi_sum = 0;
+	public static void calculateCCI() {
+		double cci_sum = 0;
 		
 		comm_no++;
 		System.out.print("Community:"+comm_no+" ");
 
 		for(int k=0; k<kyw.size(); k++)
 		{
-			double hhi_kyw = 0;
+			double cci_kyw = 0;
+			double max_share_kyw = 0;
 			for(int a=0; a<adv.size(); a++)
 			{
 				String adv_kyw = adv.get(a)+"-"+kyw.get(k);
 				if(adv_key_cnsm.containsKey(adv_kyw))
 				{
 					double x = Double.parseDouble(adv_key_cnsm.get(adv_kyw));
-					hhi_kyw += x*x;
+					cci_kyw += x*x*(2-x);
+					if(max_share_kyw < x)
+						max_share_kyw = x;
 				}
 			}
-			hhi_sum += hhi_kyw;
+			cci_sum += (cci_kyw + max_share_kyw - (max_share_kyw*max_share_kyw)*(2-max_share_kyw)) ;
 		}
 
-		System.out.println("Adv:"+adv.size()+" Kyw:"+kyw.size()+" TotHHI:"+hhi_sum+" AvgHHI:"+(double)hhi_sum/kyw.size());
+		System.out.println("Adv:"+adv.size()+" Kyw:"+kyw.size()+" TotCCI:"+cci_sum+" AvgCCI:"+(double)cci_sum/kyw.size());
 	}
 
 	public static void main(String args[]) throws IOException {
@@ -74,7 +77,7 @@ public class HHI {
 			if(rec.startsWith("["))
 			{
 				if(adv.size()>0 && kyw.size()>0)
-					calculateHHI();
+					calculateCCI();
 
 				adv.clear();
 				kyw.clear();
