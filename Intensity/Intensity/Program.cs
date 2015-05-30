@@ -12,7 +12,7 @@ namespace Intensity
     {
         public static void Main(string[] args)
         {
-            Tests.Test_4Ari();
+            Tests.Test_5_29_1();
             return;
 
             if (args.Length == 0)

@@ -69,6 +69,55 @@ namespace Intensity
 
         }
 
+        public static List<string> GetOneSectorAdvertisersFile(string advertiserFile)
+        {
+            var lines = new List<string>();
+            var advertiserSectors = new Dictionary<int, Dictionary<int, bool>>();
+            using (var reader = new StreamReader(advertiserFile))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    var split = line.Split('\t');
+                    var id_sector = split.First();
+                    var id = int.Parse(id_sector.Split('_').First());
+                    var sector = int.Parse(id_sector.Split('_').Last());
+                    var showPositions = int.Parse(split[1]);
+                    var date = DateTime.ParseExact(split[2], "yyyyMMdd", CultureInfo.InvariantCulture);
+                    var impressions = int.Parse(split[3]);
+                    var clicks = int.Parse(split[4]);
+                    var consumption = int.Parse(split[5]);
+                    var biddingPrice = float.Parse(split[6]);
+                    var quality = float.Parse(split[7]);
+                    var clickPrice = float.Parse(split[8]);
+                    var rank = float.Parse(split[9]);
+                    var asn = float.Parse(split[10]);
+                    if (!advertiserSectors.ContainsKey(id)) { advertiserSectors[id] = new Dictionary<int, bool>(); }
+                    advertiserSectors[id][sector] = true;
+                    line = reader.ReadLine();
+                }
+            }
+
+            using (var reader = new StreamReader(advertiserFile))
+            {
+                var line = reader.ReadLine();
+                while (line != null)
+                {
+                    var split = line.Split('\t');
+                    var id_sector = split.First();
+                    var id = int.Parse(id_sector.Split('_').First());
+                    var sector = int.Parse(id_sector.Split('_').Last());
+                    if (advertiserSectors[id].Count == 1)
+                    {
+                        lines.Add(line);
+                    }
+                    line = reader.ReadLine();
+                }
+            }
+
+            return lines;
+        }
+
         public static void GetOneSectorAdvertisers(string advertiserFile, string output)
         {
             var lines = new List<string>();
