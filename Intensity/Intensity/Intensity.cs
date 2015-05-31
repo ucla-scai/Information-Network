@@ -14,11 +14,156 @@ namespace Intensity
         LowIntensity = 2
     }
 
+    public class IntensityByAdvertiserLeast : Intensity
+    {
+        public IntensityByAdvertiserLeast(Graph graph, float p, Decision decision)
+            : base(graph, p, decision)
+        {
+        }
+        public override bool ContinueWithHeuristic(Node n)
+        {
+            return !n.IsAdvertiser;
+        }
+
+        public override bool ContinueWithIteration(Node n)
+        {
+            return n.IsAdvertiser;
+        }
+
+        protected override void MoveKeywords()
+        {
+            foreach (var keyword in _graph.Nodes.ToList())
+            {
+                if (!ContinueWithHeuristic(keyword.Value)) { continue; }
+                var minCommunityWeight = float.MaxValue;
+                var minCommunity = -1;
+                var communityWeights = new Dictionary<int, float>();
+                foreach (var advertiserEdge in keyword.Value.Edges.ToList())
+                {
+                    var weight = advertiserEdge.Weight;
+                    var community = advertiserEdge.Node.Community;
+                    if (communityWeights.ContainsKey(community)) { communityWeights[community] += weight; } else { communityWeights[community] = weight; }
+                    if (communityWeights[community] < minCommunityWeight)
+                    {
+                        minCommunityWeight = communityWeights[community];
+                        minCommunity = community;
+                    }
+                }
+                keyword.Value.Community = minCommunity;
+            }
+        }
+    }
+
+    public class IntensityByKeywordMaxIntensity : Intensity
+    {
+        public IntensityByKeywordMaxIntensity(Graph graph, float p, Decision decision)
+            : base(graph, p, decision)
+        {
+        }
+        public override bool ContinueWithHeuristic(Node n)
+        {
+            return n.IsAdvertiser;
+        }
+
+        public override bool ContinueWithIteration(Node n)
+        {
+            return !n.IsAdvertiser;
+        }
+
+        protected override void MoveKeywords()
+        {
+            foreach (var keyword in _graph.Nodes.ToList())
+            {
+                if (!ContinueWithHeuristic(keyword.Value)) { continue; }
+                var maxCommunityIntensity = float.MinValue;
+                var maxCommunity = -1;
+                var communityWeights = new Dictionary<int, Tuple<int, float>>();
+                foreach (var advertiserEdge in keyword.Value.Edges.ToList())
+                {
+                    var weight = advertiserEdge.Weight;
+                    var community = advertiserEdge.Node.Community;
+                    if (communityWeights.ContainsKey(community))
+                    {
+                        var item1 = communityWeights[community].Item1;
+                        var item2 = communityWeights[community].Item2;
+                        communityWeights[community] = Tuple.Create(item1 + 1, item2 + weight);
+                    }
+                    else
+                    {
+                        communityWeights[community] = Tuple.Create(1, weight);
+                    }
+
+                    var item1_2 = communityWeights[community].Item1;
+                    var item2_2 = communityWeights[community].Item2;
+
+                    var tot = item2_2 / item1_2.ToFloat();
+                    if (tot > maxCommunityIntensity)
+                    {
+                        maxCommunityIntensity = tot;
+                        maxCommunity = community;
+                    }
+                }
+                keyword.Value.Community = maxCommunity;
+            }
+        }
+    }
+
+    public class IntensityByAdvertiserMaxIntensity : Intensity
+    {
+        public IntensityByAdvertiserMaxIntensity(Graph graph, float lambda, Decision decision)
+            : base(graph, lambda, decision)
+        {
+        }
+        public override bool ContinueWithHeuristic(Node n)
+        {
+            return !n.IsAdvertiser;
+        }
+
+        public override bool ContinueWithIteration(Node n)
+        {
+            return n.IsAdvertiser;
+        }
+
+        protected override void MoveKeywords()
+        {
+            foreach (var keyword in _graph.Nodes.ToList())
+            {
+                if (!ContinueWithHeuristic(keyword.Value)) { continue; }
+                var maxCommunityIntensity = float.MinValue;
+                var maxCommunity = -1;
+                var communityWeights = new Dictionary<int, Tuple<int, float>>();
+                foreach (var advertiserEdge in keyword.Value.Edges.ToList())
+                {
+                    var weight = advertiserEdge.Weight;
+                    var community = advertiserEdge.Node.Community;
+                    if (communityWeights.ContainsKey(community)) 
+                    {
+                        var item1 = communityWeights[community].Item1;
+                        var item2 = communityWeights[community].Item2;
+                        communityWeights[community] = Tuple.Create(item1 + 1, item2 + weight);
+                    } 
+                    else 
+                    { 
+                        communityWeights[community] = Tuple.Create(1, weight); 
+                    }
+
+                    var item1_2 = communityWeights[community].Item1;
+                    var item2_2 = communityWeights[community].Item2;
+
+                    var tot = item2_2 / item1_2.ToFloat();
+                    if (tot > maxCommunityIntensity)
+                    {
+                        maxCommunityIntensity = tot;
+                        maxCommunity = community;
+                    }
+                }
+                keyword.Value.Community = maxCommunity;
+            }
+        }
+    }
+
     public class IntensityByAdvertiser : Intensity
     {
-        private Graph graph;
-        private float p;
-        private Decision decision;
 
         public IntensityByAdvertiser(Graph graph, float p, Decision decision) : base(graph, p, decision)
         {
@@ -54,7 +199,7 @@ namespace Intensity
 
     public abstract class Intensity
     {
-        Graph _graph;
+        protected Graph _graph;
         float _lambda;
         Decision _decision;
 
@@ -82,7 +227,7 @@ namespace Intensity
             MoveKeywords();
         }
 
-        private void MoveKeywords()
+        protected virtual void MoveKeywords()
         {
             var weights = _decision == Decision.Weights;
             var highIntesity = _decision == Decision.HighIntensity;
@@ -118,7 +263,7 @@ namespace Intensity
             float old_sum = -1;
             var iter = 0;
             var initial = true;
-            while (sum != old_sum)
+            while (sum != old_sum && iter < 50)
             {
                 iter++;
                 old_sum = initial ? -1 * _lambda * _graph.AdvertiserCount : sum;

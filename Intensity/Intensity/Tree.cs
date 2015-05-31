@@ -22,10 +22,23 @@ namespace Intensity
             while (true)
             {
                 Node root = null;
+                string min = null;
 
                 foreach (var node in _graph.Nodes)
                 {
-                    if (!seen.ContainsKey(node.Value.Id)) { root = node.Value; }
+                    if (!seen.ContainsKey(node.Value.Id)) 
+                    {
+                        if (root == null)
+                        {
+                            root = node.Value;
+                            min = node.Value.Id;
+                        }
+                        else if(node.Value.Id.CompareTo(min) < 0)
+                        {
+                            min = node.Value.Id;
+                            root = node.Value;
+                        }
+                    }
                 }
 
                 if (root == null)
@@ -54,6 +67,21 @@ namespace Intensity
 
     public class Tree
     {
+        public int Metric { get { return Count * Depth; } }
+
+        public bool Same(Tree t)
+        {
+            if (t._flat.Count != _flat.Count) { return false; }
+            if (t.Count != Count) { return false; }
+            if (t.Depth != Depth) { return false; }
+
+            foreach (var pair in _flat.ToList())
+            {
+                if (!t._flat.ContainsKey(pair.Id)) { return false; }
+            }
+            return true;
+        }
+
         private TreeNode _treeRoot;
         private int _depth = 0;
         private int _count = 0;
@@ -73,12 +101,12 @@ namespace Intensity
         {
             Queue<TreeNode> q = new Queue<TreeNode>();
             q.Enqueue(_treeRoot);
+            _flat[_treeRoot.Id] = _treeRoot.Node;
             while (q.Count > 0)
             {
                 var node = q.Dequeue();
                 _depth = node.Level;
                 _count++;
-                _flat[node.Id] = node.Node;
                 node.Children = new List<TreeNode>();
                 foreach(var childEdge in node.Node.Edges.ToList())
                 {
@@ -87,6 +115,7 @@ namespace Intensity
                     var treeNode = new TreeNode() { Node = childNode, Level = node.Level+1 };
                     node.Children.Add(treeNode);
                     q.Enqueue(treeNode);
+                    _flat[childNode.Id] = childNode;
                 }
             }
 

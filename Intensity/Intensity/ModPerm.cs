@@ -5,6 +5,42 @@ using System.Text;
 
 namespace Intensity
 {
+
+    public class ModPermLeast : ModPerm
+    {
+        public ModPermLeast(Graph graph, float p, Decision decision)
+            : base(graph, p, decision)
+        {
+        }
+
+
+        protected override void MoveKeywords()
+        {
+            var weights = _decision == Decision.Weights;
+            var highIntesity = _decision == Decision.HighIntensity;
+            var lowIntensity = _decision == Decision.LowIntensity;
+
+            foreach (var keyword in _graph.Nodes.ToList())
+            {
+                if (keyword.Value.IsAdvertiser) { continue; }
+                var minCommunityCount = int.MaxValue;
+                var minCommunity = -1;
+                var communityCounts = new Dictionary<int, int>();
+                foreach (var advertiserEdge in keyword.Value.Edges.ToList())
+                {
+                    var community = advertiserEdge.Node.Community;
+                    if (communityCounts.ContainsKey(community)) { communityCounts[community]++; } else { communityCounts[community] = 1; }
+                    if (communityCounts[community] < minCommunityCount)
+                    {
+                        minCommunityCount = communityCounts[community];
+                        minCommunity = community;
+                    }
+                }
+                keyword.Value.Community = minCommunity;
+            }
+        }
+    }
+
     public class ModPermCount : ModPerm
     {
         public ModPermCount(Graph graph, float p, Decision decision) : base(graph, p, decision)
