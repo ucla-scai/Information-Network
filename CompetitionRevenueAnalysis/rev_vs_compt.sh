@@ -16,7 +16,10 @@ for i in ${!sum1[@]}; do
 done
 
 total_clicks=$(awk -F',' '{clsum+=$2}; END {print clsum}' adv_click.dat)
-hhi=$(awk -F',' '{u+=($2/$total_clicks)*($2/$total_clicks)}; END {print u}' adv_click.dat)
+total_clicks_sq=$(bc -l <<< $total_clicks*$total_clicks)
+
+vals=$(awk -F',' '{u+=$2*$2}; END {print u}' adv_click.dat)
+hhi=$(bc -l <<< $vals/$total_clicks_sq)
 
 total_cnsm=$(awk '{print $1, $6}' "$f" | grep "$s " | awk '{cnsum+=$2}; END {print cnsum}')
 
